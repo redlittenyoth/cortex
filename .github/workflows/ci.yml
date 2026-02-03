@@ -195,6 +195,8 @@ jobs:
   audit:
     name: Security Audit
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    # Continue on error - vulnerabilities are tracked via GitHub issues, not CI failures
+    continue-on-error: true
     permissions:
       contents: read
       issues: write
