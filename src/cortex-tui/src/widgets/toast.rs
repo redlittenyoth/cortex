@@ -274,7 +274,7 @@ impl ToastManager {
     }
 
     /// Adds a toast to the manager and returns its ID.
-    pub fn push(&mut self, mut toast: Toast) -> u64 {
+    pub fn push(&mut self, toast: Toast) -> u64 {
         // Toast notifications disabled
         let _ = toast;
         0
@@ -641,24 +641,25 @@ mod tests {
 
     #[test]
     fn test_toast_manager_push() {
+        // Toast notifications are disabled - verifying no-op behavior
         let mut manager = ToastManager::new();
 
         let id1 = manager.success("First");
         let id2 = manager.info("Second");
         let id3 = manager.warning("Third");
 
-        assert_eq!(manager.len(), 3);
-        assert!(!manager.is_empty());
+        assert_eq!(manager.len(), 0);
+        assert!(manager.is_empty());
 
-        // IDs should be unique and incrementing
-        assert_ne!(id1, id2);
-        assert_ne!(id2, id3);
-        assert!(id2 > id1);
-        assert!(id3 > id2);
+        // All IDs should be 0 (no-op)
+        assert_eq!(id1, 0);
+        assert_eq!(id2, 0);
+        assert_eq!(id3, 0);
     }
 
     #[test]
     fn test_toast_manager_dismiss() {
+        // Toast notifications are disabled - verifying no-op behavior
         let mut manager = ToastManager::new();
 
         let id1 = manager.success("First");
@@ -667,34 +668,37 @@ mod tests {
 
         manager.dismiss(id2);
 
-        assert_eq!(manager.len(), 2);
-
-        // Check remaining toasts
-        let visible = manager.visible();
-        let ids: Vec<u64> = visible.iter().map(|t| t.id).collect();
-        assert!(!ids.contains(&id2));
-        assert!(ids.contains(&id1));
-        assert!(ids.contains(&id3));
+        // No toasts stored, so nothing to dismiss
+        assert_eq!(manager.len(), 0);
+        assert!(manager.is_empty());
+        assert_eq!(id1, 0);
+        assert_eq!(id2, 0);
+        assert_eq!(id3, 0);
     }
 
     #[test]
     fn test_toast_manager_clear() {
+        // Toast notifications are disabled - verifying no-op behavior
         let mut manager = ToastManager::new();
 
         manager.success("First");
         manager.info("Second");
         manager.warning("Third");
 
-        assert_eq!(manager.len(), 3);
+        // No toasts stored (disabled)
+        assert_eq!(manager.len(), 0);
+        assert!(manager.is_empty());
 
         manager.clear();
 
+        // Still empty after clear
         assert!(manager.is_empty());
         assert_eq!(manager.len(), 0);
     }
 
     #[test]
     fn test_toast_manager_visible_limit() {
+        // Toast notifications are disabled - verifying no-op behavior
         let mut manager = ToastManager::new().with_max_visible(2);
 
         manager.success("First");
@@ -702,15 +706,13 @@ mod tests {
         manager.warning("Third");
 
         let visible = manager.visible();
-        assert_eq!(visible.len(), 2);
-
-        // Should be newest first
-        assert_eq!(visible[0].message, "Third");
-        assert_eq!(visible[1].message, "Second");
+        assert_eq!(visible.len(), 0);
+        assert!(manager.is_empty());
     }
 
     #[test]
     fn test_toast_manager_newest_first() {
+        // Toast notifications are disabled - verifying no-op behavior
         let mut manager = ToastManager::new();
 
         manager.success("First");
@@ -718,9 +720,8 @@ mod tests {
         manager.warning("Third");
 
         let visible = manager.visible();
-        assert_eq!(visible[0].message, "Third");
-        assert_eq!(visible[1].message, "Second");
-        assert_eq!(visible[2].message, "First");
+        assert_eq!(visible.len(), 0);
+        assert!(manager.is_empty());
     }
 
     #[test]
