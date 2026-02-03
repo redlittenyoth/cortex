@@ -175,14 +175,32 @@ cortex exec --auto high "Deploy to staging and run integration tests"
 
 ### Skip Permissions (DANGEROUS)
 
-The `--skip-permissions-unsafe` flag bypasses all permission checks:
+> ⚠️ **EXTREME CAUTION REQUIRED** ⚠️
+>
+> The `--skip-permissions-unsafe` flag is **inherently dangerous** and should be avoided in almost all cases. Using this flag can lead to:
+> - Unintended file deletions or modifications
+> - Exposure of sensitive data
+> - System-wide changes that are difficult to reverse
+> - Security vulnerabilities in your environment
+
+The `--skip-permissions-unsafe` flag bypasses **ALL** permission checks:
 
 ```bash
-# DANGEROUS: Use only in fully trusted environments
+# ⚠️ DANGEROUS: Use only in fully isolated, ephemeral environments
+# Never use this on production systems or with sensitive data
 cortex exec --skip-permissions-unsafe "full system access task"
 ```
 
-**Warning:** This flag should only be used in isolated, controlled environments where you fully trust the operations being performed.
+**When is this acceptable?**
+- Isolated Docker containers that are discarded after use
+- Ephemeral CI/CD runners with no sensitive data
+- Sandboxed testing environments
+
+**When should you NEVER use this?**
+- Production systems
+- Any environment with sensitive data or credentials
+- Shared development machines
+- When processing untrusted input
 
 ## Output Formats
 
@@ -308,8 +326,9 @@ cortex exec --auto low \
 #!/bin/bash
 # Process multiple files
 for file in src/*.rs; do
+  # Quote variable to prevent word splitting and glob expansion
   cortex exec --auto low \
-    "Add documentation comments to all public functions in $file"
+    "Add documentation comments to all public functions in \"$file\""
 done
 ```
 
@@ -444,15 +463,31 @@ status=$(echo "$result" | jq -r '.status')
 
 ### 4. Validate Before Production
 
-Test in lower environments first:
+Test in lower environments first with proper safeguards:
 
 ```bash
-# Test in staging
-cortex exec --auto medium --cwd /staging "test changes"
+# Test in staging with timeout and turn limits
+cortex exec --auto medium --cwd /staging \
+  --timeout 300 --max-turns 20 \
+  "test changes"
 
-# Then production
-cortex exec --auto high --cwd /production "deploy"
+# Production deployments should include:
+# - Explicit timeouts to prevent runaway execution
+# - Turn limits for predictable behavior
+# - Logging for audit trails
+# - Dry-run verification when possible
+cortex exec --auto high --cwd /production \
+  --timeout 600 --max-turns 50 \
+  -o jsonl "deploy" 2>&1 | tee deploy-$(date +%Y%m%d-%H%M%S).log
 ```
+
+**Production Safety Checklist:**
+- [ ] Run dry-run or staging tests first
+- [ ] Set explicit `--timeout` values
+- [ ] Set explicit `--max-turns` limits
+- [ ] Enable logging with `-o jsonl` and `tee`
+- [ ] Have rollback procedures ready
+- [ ] Monitor execution in real-time when possible
 
 ### 5. Log and Monitor
 
