@@ -74,9 +74,13 @@ impl AutonomyLevel {
     }
 
     /// Check if a command risk level is allowed.
-    pub fn allows_risk(&self, risk: &str) -> bool {
+    ///
+    /// # Arguments
+    /// * `risk` - The risk level of the command ("low", "medium", "high")
+    /// * `command` - The actual command string to check if it's read-only
+    pub fn allows_risk(&self, risk: &str, command: &str) -> bool {
         match self {
-            AutonomyLevel::ReadOnly => risk == "low" && is_read_only_command(risk),
+            AutonomyLevel::ReadOnly => risk == "low" && is_read_only_command(command),
             AutonomyLevel::Low => risk == "low",
             AutonomyLevel::Medium => risk == "low" || risk == "medium",
             AutonomyLevel::High => true,
@@ -86,34 +90,31 @@ impl AutonomyLevel {
 
 /// Check if a command is read-only (safe for read-only mode).
 pub fn is_read_only_command(cmd: &str) -> bool {
-    let read_only_patterns = [
-        "cat",
-        "less",
-        "head",
-        "tail",
-        "ls",
-        "pwd",
-        "echo",
-        "whoami",
-        "date",
-        "uname",
-        "ps",
-        "top",
-        "git status",
-        "git log",
-        "git diff",
-        "git branch",
-        "find",
-        "grep",
-        "rg",
-        "fd",
-        "tree",
-        "wc",
-        "file",
+    let read_only_commands = [
+        "cat", "less", "head", "tail", "ls", "pwd", "echo", "whoami", "date", "uname", "ps", "top",
+        "find", "grep", "rg", "fd", "tree", "wc", "file",
     ];
+    let read_only_git_subcommands = ["git status", "git log", "git diff", "git branch"];
 
     let cmd_lower = cmd.to_lowercase();
-    read_only_patterns.iter().any(|p| cmd_lower.starts_with(p))
+
+    // Check git subcommands first (they contain spaces)
+    if read_only_git_subcommands
+        .iter()
+        .any(|p| cmd_lower.starts_with(p))
+    {
+        return true;
+    }
+
+    // Extract the first word (the command itself) for exact matching
+    let first_word = cmd_lower.split_whitespace().next().unwrap_or("");
+
+    // Also check for absolute paths (e.g., /bin/cat, /usr/bin/ls)
+    let command_name = first_word.rsplit('/').next().unwrap_or(first_word);
+
+    read_only_commands
+        .iter()
+        .any(|p| command_name == *p || first_word == *p)
 }
 
 #[cfg(test)]
@@ -142,11 +143,49 @@ mod tests {
 
     #[test]
     fn test_is_read_only_command() {
+        // Basic read-only commands
         assert!(is_read_only_command("cat file.txt"));
         assert!(is_read_only_command("ls -la"));
         assert!(is_read_only_command("git status"));
         assert!(is_read_only_command("git log --oneline"));
+        assert!(is_read_only_command("pwd"));
+        assert!(is_read_only_command("echo hello"));
+        assert!(is_read_only_command("/bin/cat file.txt"));
+        assert!(is_read_only_command("/usr/bin/ls -la"));
+
+        // Non-read-only commands
         assert!(!is_read_only_command("rm -rf /"));
         assert!(!is_read_only_command("git push"));
+
+        // Ensure prefix matching doesn't cause false positives (Issue #3820)
+        assert!(!is_read_only_command("catfile")); // Not "cat file"
+        assert!(!is_read_only_command("lsmod")); // Not "ls mod"
+        assert!(!is_read_only_command("datestamp")); // Not "date stamp"
+        assert!(!is_read_only_command("categorical-analysis")); // Not "cat"
+    }
+
+    #[test]
+    fn test_allows_risk() {
+        // Test ReadOnly level
+        assert!(AutonomyLevel::ReadOnly.allows_risk("low", "cat file.txt"));
+        assert!(AutonomyLevel::ReadOnly.allows_risk("low", "ls -la"));
+        assert!(!AutonomyLevel::ReadOnly.allows_risk("low", "rm file.txt"));
+        assert!(!AutonomyLevel::ReadOnly.allows_risk("medium", "cat file.txt"));
+        assert!(!AutonomyLevel::ReadOnly.allows_risk("high", "cat file.txt"));
+
+        // Test Low level
+        assert!(AutonomyLevel::Low.allows_risk("low", "any command"));
+        assert!(!AutonomyLevel::Low.allows_risk("medium", "any command"));
+        assert!(!AutonomyLevel::Low.allows_risk("high", "any command"));
+
+        // Test Medium level
+        assert!(AutonomyLevel::Medium.allows_risk("low", "any command"));
+        assert!(AutonomyLevel::Medium.allows_risk("medium", "any command"));
+        assert!(!AutonomyLevel::Medium.allows_risk("high", "any command"));
+
+        // Test High level
+        assert!(AutonomyLevel::High.allows_risk("low", "any command"));
+        assert!(AutonomyLevel::High.allows_risk("medium", "any command"));
+        assert!(AutonomyLevel::High.allows_risk("high", "any command"));
     }
 }

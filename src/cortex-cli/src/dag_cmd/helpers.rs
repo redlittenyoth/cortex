@@ -28,6 +28,17 @@ pub fn load_spec(path: &PathBuf) -> Result<DagSpecInput> {
         serde_yaml::from_str(&content).context("Failed to parse YAML")?
     };
 
+    // Check for duplicate task IDs (Issue #3815)
+    let mut seen_names = std::collections::HashSet::new();
+    for task in &spec.tasks {
+        if !seen_names.insert(&task.name) {
+            anyhow::bail!(
+                "Duplicate task ID '{}' found in DAG specification. Task IDs must be unique.",
+                task.name
+            );
+        }
+    }
+
     Ok(spec)
 }
 
@@ -67,8 +78,9 @@ pub fn convert_specs(input: &DagSpecInput) -> Vec<TaskSpec> {
 pub fn print_dag_summary(dag: &TaskDag) {
     println!("Tasks:");
     for task in dag.all_tasks() {
-        let deps = dag
-            .get_dependencies(task.id.unwrap())
+        let deps = task
+            .id
+            .and_then(|id| dag.get_dependencies(id))
             .map(|d| d.len())
             .unwrap_or(0);
         let dep_str = if deps > 0 {
@@ -119,7 +131,11 @@ pub fn print_execution_summary(stats: &DagExecutionStats, format: DagOutputForma
                 "skipped": stats.skipped_tasks,
                 "duration_secs": stats.total_duration.as_secs_f64()
             });
-            println!("{}", serde_json::to_string_pretty(&output).unwrap());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&output)
+                    .expect("JSON serialization should not fail for DagExecutionStats")
+            );
         }
         DagOutputFormat::Compact => {
             println!(
@@ -170,7 +186,7 @@ pub fn print_ascii_graph(dag: &TaskDag, spec: &DagSpecInput) {
         for task_id in tasks_at_depth {
             if let Some(task) = dag.get_task(*task_id) {
                 let deps = dag.get_dependencies(*task_id);
-                let arrow = if deps.map(|d| !d.is_empty()).unwrap_or(false) {
+                let arrow = if deps.is_some_and(|d| !d.is_empty()) {
                     "└─► "
                 } else {
                     "● "
@@ -195,7 +211,7 @@ pub fn print_dot_graph(dag: &TaskDag, spec: &DagSpecInput) {
     println!();
 
     for task in dag.all_tasks() {
-        let task_id = task.id.unwrap();
+        let Some(task_id) = task.id else { continue };
         let color = match task.status {
             TaskStatus::Completed => "green",
             TaskStatus::Failed => "red",
@@ -214,7 +230,7 @@ pub fn print_dot_graph(dag: &TaskDag, spec: &DagSpecInput) {
     println!();
 
     for task in dag.all_tasks() {
-        let task_id = task.id.unwrap();
+        let Some(task_id) = task.id else { continue };
         if let Some(deps) = dag.get_dependencies(task_id) {
             for dep_id in deps {
                 println!("  \"{}\" -> \"{}\";", dep_id.inner(), task_id.inner());
@@ -234,14 +250,14 @@ pub fn print_mermaid_graph(dag: &TaskDag, spec: &DagSpecInput) {
     // Create task ID to safe name mapping
     let mut id_to_name: HashMap<TaskId, String> = HashMap::new();
     for task in dag.all_tasks() {
-        let task_id = task.id.unwrap();
+        let Some(task_id) = task.id else { continue };
         let safe_name = task.name.replace([' ', '-'], "_");
         id_to_name.insert(task_id, safe_name.clone());
         println!("    {}[{}]", safe_name, task.name);
     }
 
     for task in dag.all_tasks() {
-        let task_id = task.id.unwrap();
+        let Some(task_id) = task.id else { continue };
         if let Some(deps) = dag.get_dependencies(task_id) {
             for dep_id in deps {
                 if let (Some(from), Some(to)) = (id_to_name.get(dep_id), id_to_name.get(&task_id)) {
