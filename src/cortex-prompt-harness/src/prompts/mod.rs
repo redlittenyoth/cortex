@@ -18,6 +18,7 @@
 //! - [`review`]: Code review prompts
 //! - [`tools`]: Tool-specific prompts (subagent executor, mentions)
 //! - [`generation`]: Agent generation prompts
+//! - [`top_agent`]: Top-agent style prompts (autonomous, backup-first philosophy)
 //!
 //! # Usage
 //!
@@ -33,6 +34,10 @@
 //!
 //! // Get task prompts
 //! let summary = prompts::tasks::SUMMARIZATION_PROMPT;
+//!
+//! // Use top-agent style prompts
+//! let top_agent = prompts::top_agent::TOP_AGENT_SYSTEM_PROMPT;
+//! let coding = prompts::top_agent::TopAgentPresets::coding_assistant();
 //! ```
 
 pub mod agents;
@@ -41,6 +46,7 @@ pub mod generation;
 pub mod review;
 pub mod tasks;
 pub mod tools;
+pub mod top_agent;
 
 // Re-export commonly used prompts for convenience
 pub use agents::{
@@ -54,3 +60,6 @@ pub use core::{
     SECTION_RESPONSE_PATTERNS, SECTION_TOOLKIT, TUI_SYSTEM_PROMPT_TEMPLATE,
 };
 pub use tasks::{COMPACTION_PROMPT, SUMMARIZATION_PROMPT};
+pub use top_agent::{
+    TOP_AGENT_SECTION_NAMES, TOP_AGENT_SYSTEM_PROMPT, TopAgentPresets, TopAgentPromptBuilder,
+};
