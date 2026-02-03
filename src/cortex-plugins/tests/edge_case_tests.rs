@@ -124,7 +124,7 @@ version = "{}"
 
     #[test]
     fn test_manifest_invalid_toml_syntax() {
-        let invalid_toml_cases = vec![
+        let invalid_toml_cases = [
             // Missing closing bracket
             "[plugin\nid = \"test\"",
             // Invalid key syntax
