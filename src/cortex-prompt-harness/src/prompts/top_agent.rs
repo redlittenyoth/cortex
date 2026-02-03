@@ -9,7 +9,6 @@
 //! - Concise, direct, and friendly communication
 //! - Multiple tool calling patterns
 //! - Background process management
-//! - Workspace cleanup before completion
 //!
 //! # Usage
 //!
@@ -23,7 +22,7 @@
 //! let custom = TopAgentPromptBuilder::new()
 //!     .with_code_execution()
 //!     .with_file_operations()
-//!     .without_section("WORKSPACE_CLEANUP")
+//!     .without_section("GEOMETRIC_DATA")
 //!     .build();
 //! ```
 
@@ -410,24 +409,6 @@ The example was generated from different input data. Your output WILL have diffe
 - **Never use example values to guide your solution approach** - solve the problem using the task description and your input data only
 
 **When values differ from example:** That's expected. Stop. Do not adjust. Move on. Do not add offsets, base addresses, or any transformations to match example values."#;
-
-/// Workspace cleanup section.
-pub const SECTION_WORKSPACE_CLEANUP: &str = r#"## Workspace Cleanup (GC)
-
-Before marking a task complete, clean up any artifacts that could interfere with verification or leave the workspace in a messy state:
-
-- **Generated artifacts**: Remove compiled files, build outputs, and cache directories that you created during the task (e.g., `__pycache__`, `.pyc`, `node_modules` if you installed them, `dist/`, `build/`, `*.egg-info`).
-- **Temporary files**: Delete any temporary files, logs, or scratch files you created for debugging or testing (e.g., `*.tmp`, `*.log`, test scripts you added).
-- **Intermediate outputs**: Clean up any intermediate files from multi-step processes that aren't part of the final deliverable.
-
-**Guidelines:**
-- Only remove artifacts YOU created during this task, never pre-existing files.
-- If unsure whether a file existed before, leave it alone.
-- Keep files that are explicitly required by the task or verification.
-- Use `rm -rf` cautiously and only on directories you created.
-- When in doubt, list files before removing: `ls -la` first, then targeted removal.
-
-This ensures the workspace remains clean for verification tests and doesn't contain artifacts that could cause false positives or negatives."#;
 
 /// Ambition vs precision guidance section.
 pub const SECTION_AMBITION_PRECISION: &str = r#"## Ambition vs. Precision
@@ -933,25 +914,6 @@ The example was generated from different input data. Your output WILL have diffe
 
 ---
 
-## Workspace Cleanup (GC)
-
-Before marking a task complete, clean up any artifacts that could interfere with verification or leave the workspace in a messy state:
-
-- **Generated artifacts**: Remove compiled files, build outputs, and cache directories that you created during the task (e.g., `__pycache__`, `.pyc`, `node_modules` if you installed them, `dist/`, `build/`, `*.egg-info`).
-- **Temporary files**: Delete any temporary files, logs, or scratch files you created for debugging or testing (e.g., `*.tmp`, `*.log`, test scripts you added).
-- **Intermediate outputs**: Clean up any intermediate files from multi-step processes that aren't part of the final deliverable.
-
-**Guidelines:**
-- Only remove artifacts YOU created during this task, never pre-existing files.
-- If unsure whether a file existed before, leave it alone.
-- Keep files that are explicitly required by the task or verification.
-- Use `rm -rf` cautiously and only on directories you created.
-- When in doubt, list files before removing: `ls -la` first, then targeted removal.
-
-This ensures the workspace remains clean for verification tests and doesn't contain artifacts that could cause false positives or negatives.
-
----
-
 ## Ambition vs. Precision
 
 For tasks that have no prior context (i.e. the user is starting something brand new), you should feel free to be ambitious and demonstrate creativity with your implementation.
@@ -1167,7 +1129,6 @@ pub const TOP_AGENT_SECTION_NAMES: &[&str] = &[
     "EDGE_CASES",
     "PRE_COMPLETION",
     "EXAMPLE_OUTPUT_WARNING",
-    "WORKSPACE_CLEANUP",
     "AMBITION_PRECISION",
     "PROGRESS_UPDATES",
     "WEB_SEARCH",
@@ -1213,7 +1174,7 @@ impl TopAgentSection {
 /// let prompt = TopAgentPromptBuilder::new()
 ///     .with_code_execution()
 ///     .with_file_operations()
-///     .without_section("WORKSPACE_CLEANUP")
+///     .without_section("GEOMETRIC_DATA")
 ///     .with_variable("cwd", "/my/project")
 ///     .build();
 /// ```
@@ -1258,7 +1219,6 @@ impl TopAgentPromptBuilder {
                 TopAgentSection::new("EDGE_CASES", SECTION_EDGE_CASES),
                 TopAgentSection::new("PRE_COMPLETION", SECTION_PRE_COMPLETION),
                 TopAgentSection::new("EXAMPLE_OUTPUT_WARNING", SECTION_EXAMPLE_OUTPUT_WARNING),
-                TopAgentSection::new("WORKSPACE_CLEANUP", SECTION_WORKSPACE_CLEANUP),
                 TopAgentSection::new("AMBITION_PRECISION", SECTION_AMBITION_PRECISION),
                 TopAgentSection::new("PROGRESS_UPDATES", SECTION_PROGRESS_UPDATES),
                 TopAgentSection::new("WEB_SEARCH", SECTION_WEB_SEARCH),
@@ -1489,7 +1449,6 @@ impl TopAgentPresets {
             .without_section("BACKGROUND_PROCESSES")
             .without_section("SERVICE_READINESS")
             .without_section("PROCESS_MANAGEMENT")
-            .without_section("WORKSPACE_CLEANUP")
             .without_section("GEOMETRIC_DATA")
             .build()
     }
@@ -1505,7 +1464,6 @@ impl TopAgentPresets {
             .without_section("BACKGROUND_PROCESSES")
             .without_section("SERVICE_READINESS")
             .without_section("PROCESS_MANAGEMENT")
-            .without_section("WORKSPACE_CLEANUP")
             .without_section("DATA_SAFETY")
             .without_section("GEOMETRIC_DATA")
             .with_custom_instructions(
@@ -1541,7 +1499,6 @@ Do NOT modify any files - read-only investigation only."#,
             .without_section("EDGE_CASES")
             .without_section("PRE_COMPLETION")
             .without_section("EXAMPLE_OUTPUT_WARNING")
-            .without_section("WORKSPACE_CLEANUP")
             .without_section("AMBITION_PRECISION")
             .without_section("PROGRESS_UPDATES")
             .without_section("WEB_SEARCH")
@@ -1590,7 +1547,6 @@ mod tests {
         assert!(TOP_AGENT_SYSTEM_PROMPT.contains("Task Execution"));
         assert!(TOP_AGENT_SYSTEM_PROMPT.contains("Data Safety and Backups"));
         assert!(TOP_AGENT_SYSTEM_PROMPT.contains("Background Processes"));
-        assert!(TOP_AGENT_SYSTEM_PROMPT.contains("Workspace Cleanup"));
     }
 
     #[test]
@@ -1607,11 +1563,11 @@ mod tests {
     #[test]
     fn test_builder_without_section() {
         let prompt = TopAgentPromptBuilder::new()
-            .without_section("WORKSPACE_CLEANUP")
+            .without_section("DATA_SAFETY")
             .build();
 
         assert!(prompt.contains("Task Execution"));
-        assert!(!prompt.contains("Workspace Cleanup (GC)"));
+        assert!(!prompt.contains("Data Safety and Backups (CRITICAL"));
     }
 
     #[test]
@@ -1758,7 +1714,7 @@ mod tests {
         assert!(prompt.contains("TOP-AGENT"));
         assert!(prompt.contains("Task Execution"));
         assert!(!prompt.contains("Background Processes (CRITICAL)"));
-        assert!(!prompt.contains("Workspace Cleanup"));
+        assert!(!prompt.contains("Data Safety and Backups"));
     }
 
     #[test]
@@ -1791,7 +1747,6 @@ mod tests {
         assert!(TOP_AGENT_SECTION_NAMES.contains(&"TASK_EXECUTION"));
         assert!(TOP_AGENT_SECTION_NAMES.contains(&"DATA_SAFETY"));
         assert!(TOP_AGENT_SECTION_NAMES.contains(&"BACKGROUND_PROCESSES"));
-        assert!(TOP_AGENT_SECTION_NAMES.contains(&"WORKSPACE_CLEANUP"));
         assert!(TOP_AGENT_SECTION_NAMES.contains(&"PROCESS_MANAGEMENT"));
     }
 
