@@ -8,8 +8,8 @@ use std::path::PathBuf;
 
 use chrono::Utc;
 use cortex_plugins::{
-    HookPriority, HookResult, PluginCapability, PluginConfig, PluginError,
-    PluginIndexEntry, PluginManifest, PluginRegistry, RemoteRegistry,
+    HookPriority, HookResult, PluginCapability, PluginConfig, PluginError, PluginIndexEntry,
+    PluginManifest, PluginRegistry, RemoteRegistry,
 };
 
 // ============================================================================
@@ -212,10 +212,7 @@ version = "1.0.0"
 "#;
         // This should fail to parse due to invalid escape sequences
         let result = PluginManifest::parse(manifest_str);
-        assert!(
-            result.is_err(),
-            "Backslash in ID should fail TOML parsing"
-        );
+        assert!(result.is_err(), "Backslash in ID should fail TOML parsing");
 
         // Also test with quotes (needs escaping)
         let manifest_str2 = r#"
@@ -227,10 +224,7 @@ version = "1.0.0"
         // This parses but the ID contains quotes which should fail validation
         let manifest = PluginManifest::parse(manifest_str2).expect("should parse");
         let result = manifest.validate();
-        assert!(
-            result.is_err(),
-            "Plugin ID with quotes should be rejected"
-        );
+        assert!(result.is_err(), "Plugin ID with quotes should be rejected");
     }
 
     #[test]
@@ -343,10 +337,7 @@ name = "Test Plugin"
 version = "1.0.0"
 "#;
         let result = PluginManifest::parse(manifest_str);
-        assert!(
-            result.is_err(),
-            "Manifest without id should fail to parse"
-        );
+        assert!(result.is_err(), "Manifest without id should fail to parse");
     }
 
     #[test]
@@ -422,10 +413,7 @@ mod registry_edge_cases {
 
     #[tokio::test]
     async fn test_registry_ssrf_unspecified_addresses() {
-        let dangerous_urls = vec![
-            "https://0.0.0.0/plugin.wasm",
-            "https://[::]/plugin.wasm",
-        ];
+        let dangerous_urls = vec!["https://0.0.0.0/plugin.wasm", "https://[::]/plugin.wasm"];
 
         for url in dangerous_urls {
             let entry = create_test_entry_with_url(url);
@@ -529,7 +517,7 @@ mod registry_edge_cases {
     #[tokio::test]
     async fn test_registry_cloud_metadata_endpoints() {
         let metadata_urls = vec![
-            "https://169.254.169.254/latest/meta-data/",  // AWS
+            "https://169.254.169.254/latest/meta-data/", // AWS
             "https://metadata.google.internal/computeMetadata/v1/", // GCP
         ];
 
@@ -549,7 +537,7 @@ mod registry_edge_cases {
 
     #[tokio::test]
     async fn test_registry_duplicate_registration() {
-        use cortex_plugins::{Plugin, PluginInfo, PluginState, PluginContext};
+        use cortex_plugins::{Plugin, PluginContext, PluginInfo, PluginState};
         use std::collections::HashMap;
 
         // Create mock plugin
@@ -630,7 +618,11 @@ mod registry_edge_cases {
                 None
             }
 
-            fn set_config(&mut self, _key: &str, _value: serde_json::Value) -> cortex_plugins::Result<()> {
+            fn set_config(
+                &mut self,
+                _key: &str,
+                _value: serde_json::Value,
+            ) -> cortex_plugins::Result<()> {
                 Ok(())
             }
         }
@@ -658,7 +650,7 @@ mod registry_edge_cases {
 
     #[tokio::test]
     async fn test_registry_unload_and_reload() {
-        use cortex_plugins::{Plugin, PluginInfo, PluginState, PluginContext};
+        use cortex_plugins::{Plugin, PluginContext, PluginInfo, PluginState};
 
         struct ReloadablePlugin {
             info: PluginInfo,
@@ -740,7 +732,11 @@ mod registry_edge_cases {
                 None
             }
 
-            fn set_config(&mut self, _key: &str, _value: serde_json::Value) -> cortex_plugins::Result<()> {
+            fn set_config(
+                &mut self,
+                _key: &str,
+                _value: serde_json::Value,
+            ) -> cortex_plugins::Result<()> {
                 Ok(())
             }
         }
@@ -749,16 +745,25 @@ mod registry_edge_cases {
 
         // Register and init
         let plugin = ReloadablePlugin::new("reload-test");
-        registry.register(Box::new(plugin)).await.expect("register should work");
+        registry
+            .register(Box::new(plugin))
+            .await
+            .expect("register should work");
         assert!(registry.is_registered("reload-test").await);
 
         // Unregister
-        registry.unregister("reload-test").await.expect("unregister should work");
+        registry
+            .unregister("reload-test")
+            .await
+            .expect("unregister should work");
         assert!(!registry.is_registered("reload-test").await);
 
         // Re-register (simulating reload)
         let plugin2 = ReloadablePlugin::new("reload-test");
-        registry.register(Box::new(plugin2)).await.expect("re-register should work");
+        registry
+            .register(Box::new(plugin2))
+            .await
+            .expect("re-register should work");
         assert!(registry.is_registered("reload-test").await);
     }
 
@@ -767,8 +772,14 @@ mod registry_edge_cases {
         let registry = PluginRegistry::new();
 
         // Search with empty cache should return empty results
-        let results = registry.search("any-query").await.expect("search should work");
-        assert!(results.is_empty(), "Search with no cache should return empty");
+        let results = registry
+            .search("any-query")
+            .await
+            .expect("search should work");
+        assert!(
+            results.is_empty(),
+            "Search with no cache should return empty"
+        );
     }
 
     #[tokio::test]
@@ -776,8 +787,14 @@ mod registry_edge_cases {
         let registry = PluginRegistry::new();
 
         // Check updates with no plugins should return empty
-        let updates = registry.check_updates().await.expect("check_updates should work");
-        assert!(updates.is_empty(), "Updates with no plugins should be empty");
+        let updates = registry
+            .check_updates()
+            .await
+            .expect("check_updates should work");
+        assert!(
+            updates.is_empty(),
+            "Updates with no plugins should be empty"
+        );
     }
 
     fn create_test_entry_with_url(url: &str) -> PluginIndexEntry {
@@ -800,11 +817,11 @@ mod registry_edge_cases {
 
 mod hook_edge_cases {
     use super::*;
-    use std::sync::Arc;
     use cortex_plugins::{
-        HookRegistry, HookDispatcher, ToolExecuteBeforeHook, ToolExecuteBeforeInput,
+        HookDispatcher, HookRegistry, ToolExecuteBeforeHook, ToolExecuteBeforeInput,
         ToolExecuteBeforeOutput,
     };
+    use std::sync::Arc;
 
     // Test hook that tracks execution
     struct TestBeforeHook {
@@ -897,12 +914,20 @@ mod hook_edge_cases {
         let hook_high = Arc::new(TestBeforeHook::new(50, None, HookResult::Continue));
         let hook_normal = Arc::new(TestBeforeHook::new(100, None, HookResult::Continue));
 
-        registry.register_tool_execute_before("plugin-low", hook_low).await;
-        registry.register_tool_execute_before("plugin-high", hook_high).await;
-        registry.register_tool_execute_before("plugin-normal", hook_normal).await;
+        registry
+            .register_tool_execute_before("plugin-low", hook_low)
+            .await;
+        registry
+            .register_tool_execute_before("plugin-high", hook_high)
+            .await;
+        registry
+            .register_tool_execute_before("plugin-normal", hook_normal)
+            .await;
 
         // Verify registration
-        let count = registry.hook_count(cortex_plugins::HookType::ToolExecuteBefore).await;
+        let count = registry
+            .hook_count(cortex_plugins::HookType::ToolExecuteBefore)
+            .await;
         assert_eq!(count, 3);
     }
 
@@ -919,7 +944,9 @@ mod hook_edge_cases {
                 reason: "Test abort".to_string(),
             },
         ));
-        registry.register_tool_execute_before("aborter", abort_hook).await;
+        registry
+            .register_tool_execute_before("aborter", abort_hook)
+            .await;
 
         // Execute hook
         let input = ToolExecuteBeforeInput {
@@ -928,7 +955,10 @@ mod hook_edge_cases {
             call_id: "test-call".to_string(),
             args: serde_json::json!({}),
         };
-        let output = dispatcher.trigger_tool_execute_before(input).await.expect("dispatch should work");
+        let output = dispatcher
+            .trigger_tool_execute_before(input)
+            .await
+            .expect("dispatch should work");
 
         // Verify abort result
         match output.result {
@@ -946,11 +976,15 @@ mod hook_edge_cases {
 
         // Register skip hook with higher priority
         let skip_hook = Arc::new(TestBeforeHook::new(50, None, HookResult::Skip));
-        registry.register_tool_execute_before("skipper", skip_hook).await;
+        registry
+            .register_tool_execute_before("skipper", skip_hook)
+            .await;
 
         // Register continue hook with lower priority (should not execute)
         let continue_hook = Arc::new(TestBeforeHook::new(100, None, HookResult::Continue));
-        registry.register_tool_execute_before("continuer", continue_hook).await;
+        registry
+            .register_tool_execute_before("continuer", continue_hook)
+            .await;
 
         let input = ToolExecuteBeforeInput {
             tool: "test_tool".to_string(),
@@ -958,7 +992,10 @@ mod hook_edge_cases {
             call_id: "test-call".to_string(),
             args: serde_json::json!({}),
         };
-        let output = dispatcher.trigger_tool_execute_before(input).await.expect("dispatch should work");
+        let output = dispatcher
+            .trigger_tool_execute_before(input)
+            .await
+            .expect("dispatch should work");
 
         // Result should be Skip from first hook
         matches!(output.result, HookResult::Skip);
@@ -977,7 +1014,9 @@ mod hook_edge_cases {
                 reason: "Blocked read".to_string(),
             },
         ));
-        registry.register_tool_execute_before("blocker", patterned_hook).await;
+        registry
+            .register_tool_execute_before("blocker", patterned_hook)
+            .await;
 
         // Test matching tool
         let input_match = ToolExecuteBeforeInput {
@@ -986,7 +1025,10 @@ mod hook_edge_cases {
             call_id: "test-call".to_string(),
             args: serde_json::json!({}),
         };
-        let output = dispatcher.trigger_tool_execute_before(input_match).await.expect("dispatch should work");
+        let output = dispatcher
+            .trigger_tool_execute_before(input_match)
+            .await
+            .expect("dispatch should work");
         assert!(matches!(output.result, HookResult::Abort { .. }));
 
         // Test non-matching tool
@@ -996,7 +1038,10 @@ mod hook_edge_cases {
             call_id: "test-call".to_string(),
             args: serde_json::json!({}),
         };
-        let output = dispatcher.trigger_tool_execute_before(input_no_match).await.expect("dispatch should work");
+        let output = dispatcher
+            .trigger_tool_execute_before(input_no_match)
+            .await
+            .expect("dispatch should work");
         assert!(matches!(output.result, HookResult::Continue));
     }
 
@@ -1008,11 +1053,17 @@ mod hook_edge_cases {
         let hook1 = Arc::new(TestBeforeHook::new(100, None, HookResult::Continue));
         let hook2 = Arc::new(TestBeforeHook::new(100, None, HookResult::Continue));
 
-        registry.register_tool_execute_before("plugin-a", hook1).await;
-        registry.register_tool_execute_before("plugin-b", hook2).await;
+        registry
+            .register_tool_execute_before("plugin-a", hook1)
+            .await;
+        registry
+            .register_tool_execute_before("plugin-b", hook2)
+            .await;
 
         assert_eq!(
-            registry.hook_count(cortex_plugins::HookType::ToolExecuteBefore).await,
+            registry
+                .hook_count(cortex_plugins::HookType::ToolExecuteBefore)
+                .await,
             2
         );
 
@@ -1020,7 +1071,9 @@ mod hook_edge_cases {
         registry.unregister_plugin("plugin-a").await;
 
         assert_eq!(
-            registry.hook_count(cortex_plugins::HookType::ToolExecuteBefore).await,
+            registry
+                .hook_count(cortex_plugins::HookType::ToolExecuteBefore)
+                .await,
             1
         );
 
@@ -1043,7 +1096,9 @@ mod hook_edge_cases {
                 result: serde_json::json!({"replaced": true}),
             },
         ));
-        registry.register_tool_execute_before("replacer", replace_hook).await;
+        registry
+            .register_tool_execute_before("replacer", replace_hook)
+            .await;
 
         let input = ToolExecuteBeforeInput {
             tool: "test_tool".to_string(),
@@ -1051,7 +1106,10 @@ mod hook_edge_cases {
             call_id: "test-call".to_string(),
             args: serde_json::json!({}),
         };
-        let output = dispatcher.trigger_tool_execute_before(input).await.expect("dispatch should work");
+        let output = dispatcher
+            .trigger_tool_execute_before(input)
+            .await
+            .expect("dispatch should work");
 
         match output.result {
             HookResult::Replace { result } => {
@@ -1144,7 +1202,9 @@ mod config_edge_cases {
         config.set_plugin_config("test-plugin", plugin_config.clone());
 
         // Get config
-        let retrieved = config.get_plugin_config("test-plugin").expect("should exist");
+        let retrieved = config
+            .get_plugin_config("test-plugin")
+            .expect("should exist");
         assert_eq!(retrieved["api_key"], "secret");
         assert_eq!(retrieved["max_retries"], 3);
         assert_eq!(retrieved["enabled"], true);
@@ -1211,10 +1271,7 @@ mod error_edge_cases {
                 PluginError::invalid_manifest("plugin", "bad version"),
                 "bad version",
             ),
-            (
-                PluginError::execution_error("plugin", "timeout"),
-                "timeout",
-            ),
+            (PluginError::execution_error("plugin", "timeout"), "timeout"),
             (
                 PluginError::hook_error("plugin", "hook crashed"),
                 "hook crashed",
@@ -1231,18 +1288,12 @@ mod error_edge_cases {
                 PluginError::Timeout("operation timed out".to_string()),
                 "timed out",
             ),
-            (
-                PluginError::Disabled("plugin-x".to_string()),
-                "disabled",
-            ),
+            (PluginError::Disabled("plugin-x".to_string()), "disabled"),
             (
                 PluginError::checksum_mismatch("plugin", "abc", "def"),
                 "checksum",
             ),
-            (
-                PluginError::validation_error("url", "SSRF blocked"),
-                "SSRF",
-            ),
+            (PluginError::validation_error("url", "SSRF blocked"), "SSRF"),
         ];
 
         for (error, expected_substring) in errors {
@@ -1433,7 +1484,10 @@ mod remote_registry_edge_cases {
         registry.add_remote_registry(disabled_remote.clone()).await;
 
         // Fetching from disabled registry should return empty
-        let entries = registry.fetch_remote_index(&disabled_remote).await.expect("should work");
+        let entries = registry
+            .fetch_remote_index(&disabled_remote)
+            .await
+            .expect("should work");
         assert!(entries.is_empty());
     }
 
@@ -1442,7 +1496,9 @@ mod remote_registry_edge_cases {
         let registry = PluginRegistry::new();
 
         // Removing non-existent registry should not panic
-        registry.remove_remote_registry("https://nonexistent.com").await;
+        registry
+            .remove_remote_registry("https://nonexistent.com")
+            .await;
 
         let registries = registry.list_remote_registries().await;
         assert!(registries.is_empty());

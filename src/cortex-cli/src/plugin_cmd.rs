@@ -2871,7 +2871,10 @@ mod tests {
         };
 
         assert_eq!(args.name, "my-new-plugin", "name should match");
-        assert_eq!(args.description, "A Cortex plugin", "description should have default");
+        assert_eq!(
+            args.description, "A Cortex plugin",
+            "description should have default"
+        );
         assert!(args.author.is_none(), "author should be None by default");
         assert!(args.output.is_none(), "output should be None by default");
         assert!(!args.advanced, "advanced should be false by default");
@@ -2890,9 +2893,20 @@ mod tests {
         };
 
         assert_eq!(args.name, "full-featured-plugin", "name should match");
-        assert_eq!(args.description, "A comprehensive plugin description", "description should match");
-        assert_eq!(args.author, Some("Test Author <test@example.com>".to_string()), "author should match");
-        assert_eq!(args.output, Some(PathBuf::from("/custom/output/path")), "output should match");
+        assert_eq!(
+            args.description, "A comprehensive plugin description",
+            "description should match"
+        );
+        assert_eq!(
+            args.author,
+            Some("Test Author <test@example.com>".to_string()),
+            "author should match"
+        );
+        assert_eq!(
+            args.output,
+            Some(PathBuf::from("/custom/output/path")),
+            "output should match"
+        );
         assert!(args.advanced, "advanced should be true");
         assert!(!args.typescript, "typescript should be false");
     }
@@ -2940,8 +2954,16 @@ mod tests {
 
         assert!(args.advanced, "advanced flag should be true");
         assert!(args.typescript, "typescript flag should be true");
-        assert_eq!(args.author, Some("Developer".to_string()), "author should match");
-        assert_eq!(args.output, Some(PathBuf::from("./plugins")), "output should match");
+        assert_eq!(
+            args.author,
+            Some("Developer".to_string()),
+            "author should match"
+        );
+        assert_eq!(
+            args.output,
+            Some(PathBuf::from("./plugins")),
+            "output should match"
+        );
     }
 
     #[test]
@@ -2956,10 +2978,22 @@ mod tests {
         };
         let debug_output = format!("{:?}", args);
 
-        assert!(debug_output.contains("PluginNewArgs"), "Debug should include type name");
-        assert!(debug_output.contains("debug-test"), "Debug should include name");
-        assert!(debug_output.contains("advanced"), "Debug should include advanced field");
-        assert!(debug_output.contains("typescript"), "Debug should include typescript field");
+        assert!(
+            debug_output.contains("PluginNewArgs"),
+            "Debug should include type name"
+        );
+        assert!(
+            debug_output.contains("debug-test"),
+            "Debug should include name"
+        );
+        assert!(
+            debug_output.contains("advanced"),
+            "Debug should include advanced field"
+        );
+        assert!(
+            debug_output.contains("typescript"),
+            "Debug should include typescript field"
+        );
     }
 
     // ==========================================================================
@@ -2998,7 +3032,10 @@ mod tests {
             debounce_ms: 1000,
         };
 
-        assert_eq!(args.debounce_ms, 1000, "debounce_ms should match custom value");
+        assert_eq!(
+            args.debounce_ms, 1000,
+            "debounce_ms should match custom value"
+        );
     }
 
     #[test]
@@ -3009,7 +3046,11 @@ mod tests {
             debounce_ms: 500,
         };
 
-        assert_eq!(args.path, Some(PathBuf::from("/path/to/plugin")), "path should match");
+        assert_eq!(
+            args.path,
+            Some(PathBuf::from("/path/to/plugin")),
+            "path should match"
+        );
     }
 
     #[test]
@@ -3020,7 +3061,11 @@ mod tests {
             debounce_ms: 250,
         };
 
-        assert_eq!(args.path, Some(PathBuf::from("./my-plugin")), "path should match");
+        assert_eq!(
+            args.path,
+            Some(PathBuf::from("./my-plugin")),
+            "path should match"
+        );
         assert!(args.watch, "watch should be true");
         assert_eq!(args.debounce_ms, 250, "debounce_ms should match");
     }
@@ -3034,9 +3079,18 @@ mod tests {
         };
         let debug_output = format!("{:?}", args);
 
-        assert!(debug_output.contains("PluginDevArgs"), "Debug should include type name");
-        assert!(debug_output.contains("watch"), "Debug should include watch field");
-        assert!(debug_output.contains("debounce_ms"), "Debug should include debounce_ms field");
+        assert!(
+            debug_output.contains("PluginDevArgs"),
+            "Debug should include type name"
+        );
+        assert!(
+            debug_output.contains("watch"),
+            "Debug should include watch field"
+        );
+        assert!(
+            debug_output.contains("debounce_ms"),
+            "Debug should include debounce_ms field"
+        );
     }
 
     // ==========================================================================
@@ -3075,7 +3129,11 @@ mod tests {
             output: Some(PathBuf::from("/output/path/plugin.wasm")),
         };
 
-        assert_eq!(args.output, Some(PathBuf::from("/output/path/plugin.wasm")), "output should match");
+        assert_eq!(
+            args.output,
+            Some(PathBuf::from("/output/path/plugin.wasm")),
+            "output should match"
+        );
     }
 
     #[test]
@@ -3086,7 +3144,11 @@ mod tests {
             output: None,
         };
 
-        assert_eq!(args.path, Some(PathBuf::from("/plugin/source")), "path should match");
+        assert_eq!(
+            args.path,
+            Some(PathBuf::from("/plugin/source")),
+            "path should match"
+        );
     }
 
     #[test]
@@ -3097,9 +3159,17 @@ mod tests {
             output: Some(PathBuf::from("./dist/plugin.wasm")),
         };
 
-        assert_eq!(args.path, Some(PathBuf::from("./my-plugin")), "path should match");
+        assert_eq!(
+            args.path,
+            Some(PathBuf::from("./my-plugin")),
+            "path should match"
+        );
         assert!(args.debug, "debug should be true");
-        assert_eq!(args.output, Some(PathBuf::from("./dist/plugin.wasm")), "output should match");
+        assert_eq!(
+            args.output,
+            Some(PathBuf::from("./dist/plugin.wasm")),
+            "output should match"
+        );
     }
 
     #[test]
@@ -3111,9 +3181,18 @@ mod tests {
         };
         let debug_output = format!("{:?}", args);
 
-        assert!(debug_output.contains("PluginBuildArgs"), "Debug should include type name");
-        assert!(debug_output.contains("debug"), "Debug should include debug field");
-        assert!(debug_output.contains("output"), "Debug should include output field");
+        assert!(
+            debug_output.contains("PluginBuildArgs"),
+            "Debug should include type name"
+        );
+        assert!(
+            debug_output.contains("debug"),
+            "Debug should include debug field"
+        );
+        assert!(
+            debug_output.contains("output"),
+            "Debug should include output field"
+        );
     }
 
     // ==========================================================================
@@ -3163,7 +3242,11 @@ mod tests {
             verbose: false,
         };
 
-        assert_eq!(args.path, Some(PathBuf::from("/plugin/to/validate")), "path should match");
+        assert_eq!(
+            args.path,
+            Some(PathBuf::from("/plugin/to/validate")),
+            "path should match"
+        );
     }
 
     #[test]
@@ -3174,7 +3257,11 @@ mod tests {
             verbose: true,
         };
 
-        assert_eq!(args.path, Some(PathBuf::from("./my-plugin")), "path should match");
+        assert_eq!(
+            args.path,
+            Some(PathBuf::from("./my-plugin")),
+            "path should match"
+        );
         assert!(args.json, "json should be true");
         assert!(args.verbose, "verbose should be true");
     }
@@ -3188,9 +3275,18 @@ mod tests {
         };
         let debug_output = format!("{:?}", args);
 
-        assert!(debug_output.contains("PluginValidateArgs"), "Debug should include type name");
-        assert!(debug_output.contains("json"), "Debug should include json field");
-        assert!(debug_output.contains("verbose"), "Debug should include verbose field");
+        assert!(
+            debug_output.contains("PluginValidateArgs"),
+            "Debug should include type name"
+        );
+        assert!(
+            debug_output.contains("json"),
+            "Debug should include json field"
+        );
+        assert!(
+            debug_output.contains("verbose"),
+            "Debug should include verbose field"
+        );
     }
 
     // ==========================================================================
@@ -3225,7 +3321,10 @@ mod tests {
         };
 
         assert!(args_dry.dry_run, "dry_run should be true when set");
-        assert!(!args_actual.dry_run, "dry_run should be false when explicitly disabled");
+        assert!(
+            !args_actual.dry_run,
+            "dry_run should be false when explicitly disabled"
+        );
     }
 
     #[test]
@@ -3236,7 +3335,11 @@ mod tests {
             output: Some(PathBuf::from("/output/plugin-1.0.0.tar.gz")),
         };
 
-        assert_eq!(args.output, Some(PathBuf::from("/output/plugin-1.0.0.tar.gz")), "output should match");
+        assert_eq!(
+            args.output,
+            Some(PathBuf::from("/output/plugin-1.0.0.tar.gz")),
+            "output should match"
+        );
     }
 
     #[test]
@@ -3247,7 +3350,11 @@ mod tests {
             output: None,
         };
 
-        assert_eq!(args.path, Some(PathBuf::from("/plugin/source")), "path should match");
+        assert_eq!(
+            args.path,
+            Some(PathBuf::from("/plugin/source")),
+            "path should match"
+        );
     }
 
     #[test]
@@ -3258,9 +3365,17 @@ mod tests {
             output: Some(PathBuf::from("./dist/my-plugin-2.0.0.tar.gz")),
         };
 
-        assert_eq!(args.path, Some(PathBuf::from("./my-plugin")), "path should match");
+        assert_eq!(
+            args.path,
+            Some(PathBuf::from("./my-plugin")),
+            "path should match"
+        );
         assert!(!args.dry_run, "dry_run should be false");
-        assert_eq!(args.output, Some(PathBuf::from("./dist/my-plugin-2.0.0.tar.gz")), "output should match");
+        assert_eq!(
+            args.output,
+            Some(PathBuf::from("./dist/my-plugin-2.0.0.tar.gz")),
+            "output should match"
+        );
     }
 
     #[test]
@@ -3272,9 +3387,18 @@ mod tests {
         };
         let debug_output = format!("{:?}", args);
 
-        assert!(debug_output.contains("PluginPublishArgs"), "Debug should include type name");
-        assert!(debug_output.contains("dry_run"), "Debug should include dry_run field");
-        assert!(debug_output.contains("output"), "Debug should include output field");
+        assert!(
+            debug_output.contains("PluginPublishArgs"),
+            "Debug should include type name"
+        );
+        assert!(
+            debug_output.contains("dry_run"),
+            "Debug should include dry_run field"
+        );
+        assert!(
+            debug_output.contains("output"),
+            "Debug should include output field"
+        );
     }
 
     // ==========================================================================
@@ -3308,7 +3432,10 @@ mod tests {
             "cmd desc",
         );
 
-        assert!(manifest.contains("my-plugin-id"), "Manifest should contain plugin ID");
+        assert!(
+            manifest.contains("my-plugin-id"),
+            "Manifest should contain plugin ID"
+        );
     }
 
     #[test]
@@ -3322,7 +3449,10 @@ mod tests {
             "cmd desc",
         );
 
-        assert!(manifest.contains("My Awesome Plugin"), "Manifest should contain plugin name");
+        assert!(
+            manifest.contains("My Awesome Plugin"),
+            "Manifest should contain plugin name"
+        );
     }
 
     #[test]
@@ -3336,7 +3466,10 @@ mod tests {
             "cmd desc",
         );
 
-        assert!(manifest.contains("This is a detailed description"), "Manifest should contain description");
+        assert!(
+            manifest.contains("This is a detailed description"),
+            "Manifest should contain description"
+        );
     }
 
     #[test]
@@ -3350,7 +3483,10 @@ mod tests {
             "cmd desc",
         );
 
-        assert!(manifest.contains("John Doe <john@example.com>"), "Manifest should contain author");
+        assert!(
+            manifest.contains("John Doe <john@example.com>"),
+            "Manifest should contain author"
+        );
     }
 
     #[test]
@@ -3364,8 +3500,14 @@ mod tests {
             "My command does things",
         );
 
-        assert!(manifest.contains("my-command"), "Manifest should contain command name");
-        assert!(manifest.contains("My command does things"), "Manifest should contain command description");
+        assert!(
+            manifest.contains("my-command"),
+            "Manifest should contain command name"
+        );
+        assert!(
+            manifest.contains("My command does things"),
+            "Manifest should contain command description"
+        );
     }
 
     #[test]
@@ -3379,9 +3521,18 @@ mod tests {
             "Test cmd",
         );
 
-        assert!(manifest.contains("[plugin]"), "Manifest should have [plugin] section");
-        assert!(manifest.contains("[[commands]]"), "Manifest should have [[commands]] section");
-        assert!(manifest.contains("[wasm]"), "Manifest should have [wasm] section");
+        assert!(
+            manifest.contains("[plugin]"),
+            "Manifest should have [plugin] section"
+        );
+        assert!(
+            manifest.contains("[[commands]]"),
+            "Manifest should have [[commands]] section"
+        );
+        assert!(
+            manifest.contains("[wasm]"),
+            "Manifest should have [wasm] section"
+        );
     }
 
     // ==========================================================================
@@ -3392,15 +3543,24 @@ mod tests {
     fn test_generate_rust_code_produces_valid_template() {
         let code = generate_rust_code("Test Plugin", "test-cmd");
 
-        assert!(code.contains("#![no_std]"), "Rust code should have no_std attribute");
-        assert!(code.contains("extern crate alloc"), "Rust code should have alloc extern");
+        assert!(
+            code.contains("#![no_std]"),
+            "Rust code should have no_std attribute"
+        );
+        assert!(
+            code.contains("extern crate alloc"),
+            "Rust code should have alloc extern"
+        );
     }
 
     #[test]
     fn test_generate_rust_code_contains_plugin_name() {
         let code = generate_rust_code("My Awesome Plugin", "cmd");
 
-        assert!(code.contains("My Awesome Plugin"), "Rust code should contain plugin name");
+        assert!(
+            code.contains("My Awesome Plugin"),
+            "Rust code should contain plugin name"
+        );
     }
 
     #[test]
@@ -3408,29 +3568,44 @@ mod tests {
         let code = generate_rust_code("Plugin", "my-command");
 
         // Command name should have hyphens converted to underscores
-        assert!(code.contains("cmd_my_command"), "Rust code should contain command handler function");
+        assert!(
+            code.contains("cmd_my_command"),
+            "Rust code should contain command handler function"
+        );
     }
 
     #[test]
     fn test_generate_rust_code_has_required_functions() {
         let code = generate_rust_code("Plugin", "cmd");
 
-        assert!(code.contains("pub extern \"C\" fn init()"), "Rust code should have init function");
-        assert!(code.contains("pub extern \"C\" fn shutdown()"), "Rust code should have shutdown function");
+        assert!(
+            code.contains("pub extern \"C\" fn init()"),
+            "Rust code should have init function"
+        );
+        assert!(
+            code.contains("pub extern \"C\" fn shutdown()"),
+            "Rust code should have shutdown function"
+        );
     }
 
     #[test]
     fn test_generate_rust_code_has_panic_handler() {
         let code = generate_rust_code("Plugin", "cmd");
 
-        assert!(code.contains("#[panic_handler]"), "Rust code should have panic handler");
+        assert!(
+            code.contains("#[panic_handler]"),
+            "Rust code should have panic handler"
+        );
     }
 
     #[test]
     fn test_generate_rust_code_has_global_allocator() {
         let code = generate_rust_code("Plugin", "cmd");
 
-        assert!(code.contains("#[global_allocator]"), "Rust code should have global allocator");
+        assert!(
+            code.contains("#[global_allocator]"),
+            "Rust code should have global allocator"
+        );
         assert!(code.contains("wee_alloc"), "Rust code should use wee_alloc");
     }
 
@@ -3438,7 +3613,10 @@ mod tests {
     fn test_generate_rust_code_command_snake_case_conversion() {
         let code = generate_rust_code("Plugin", "my-multi-word-command");
 
-        assert!(code.contains("cmd_my_multi_word_command"), "Command handler should use snake_case");
+        assert!(
+            code.contains("cmd_my_multi_word_command"),
+            "Command handler should use snake_case"
+        );
     }
 
     // ==========================================================================
@@ -3457,36 +3635,54 @@ mod tests {
     fn test_generate_cargo_toml_contains_plugin_id() {
         let cargo = generate_cargo_toml("my-plugin-crate");
 
-        assert!(cargo.contains("my-plugin-crate"), "Cargo.toml should contain plugin ID as package name");
+        assert!(
+            cargo.contains("my-plugin-crate"),
+            "Cargo.toml should contain plugin ID as package name"
+        );
     }
 
     #[test]
     fn test_generate_cargo_toml_has_cdylib_crate_type() {
         let cargo = generate_cargo_toml("plugin");
 
-        assert!(cargo.contains("cdylib"), "Cargo.toml should have cdylib crate type");
+        assert!(
+            cargo.contains("cdylib"),
+            "Cargo.toml should have cdylib crate type"
+        );
     }
 
     #[test]
     fn test_generate_cargo_toml_has_wee_alloc_dependency() {
         let cargo = generate_cargo_toml("plugin");
 
-        assert!(cargo.contains("wee_alloc"), "Cargo.toml should have wee_alloc dependency");
+        assert!(
+            cargo.contains("wee_alloc"),
+            "Cargo.toml should have wee_alloc dependency"
+        );
     }
 
     #[test]
     fn test_generate_cargo_toml_has_release_profile() {
         let cargo = generate_cargo_toml("plugin");
 
-        assert!(cargo.contains("[profile.release]"), "Cargo.toml should have release profile");
-        assert!(cargo.contains("lto = true"), "Release profile should enable LTO");
+        assert!(
+            cargo.contains("[profile.release]"),
+            "Cargo.toml should have release profile"
+        );
+        assert!(
+            cargo.contains("lto = true"),
+            "Release profile should enable LTO"
+        );
     }
 
     #[test]
     fn test_generate_cargo_toml_has_lib_section() {
         let cargo = generate_cargo_toml("plugin");
 
-        assert!(cargo.contains("[lib]"), "Cargo.toml should have [lib] section");
+        assert!(
+            cargo.contains("[lib]"),
+            "Cargo.toml should have [lib] section"
+        );
     }
 
     // ==========================================================================
@@ -3497,25 +3693,46 @@ mod tests {
     fn test_generate_advanced_rust_code_has_tui_features() {
         let code = generate_advanced_rust_code("my-plugin", "Advanced Plugin", "cmd");
 
-        assert!(code.contains("register_widget"), "Advanced code should have register_widget");
-        assert!(code.contains("register_keybinding"), "Advanced code should have register_keybinding");
-        assert!(code.contains("show_toast"), "Advanced code should have show_toast");
+        assert!(
+            code.contains("register_widget"),
+            "Advanced code should have register_widget"
+        );
+        assert!(
+            code.contains("register_keybinding"),
+            "Advanced code should have register_keybinding"
+        );
+        assert!(
+            code.contains("show_toast"),
+            "Advanced code should have show_toast"
+        );
     }
 
     #[test]
     fn test_generate_advanced_rust_code_has_hooks() {
         let code = generate_advanced_rust_code("plugin-id", "Plugin", "cmd");
 
-        assert!(code.contains("hook_ui_render"), "Advanced code should have hook_ui_render");
-        assert!(code.contains("hook_animation_frame"), "Advanced code should have hook_animation_frame");
-        assert!(code.contains("hook_focus_change"), "Advanced code should have hook_focus_change");
+        assert!(
+            code.contains("hook_ui_render"),
+            "Advanced code should have hook_ui_render"
+        );
+        assert!(
+            code.contains("hook_animation_frame"),
+            "Advanced code should have hook_animation_frame"
+        );
+        assert!(
+            code.contains("hook_focus_change"),
+            "Advanced code should have hook_focus_change"
+        );
     }
 
     #[test]
     fn test_generate_advanced_rust_code_has_plugin_id_snake() {
         let code = generate_advanced_rust_code("my-plugin-id", "My Plugin", "cmd");
 
-        assert!(code.contains("action_my_plugin_id_action"), "Advanced code should have action with snake_case plugin ID");
+        assert!(
+            code.contains("action_my_plugin_id_action"),
+            "Advanced code should have action with snake_case plugin ID"
+        );
     }
 
     // ==========================================================================
@@ -3526,22 +3743,34 @@ mod tests {
     fn test_generate_typescript_code_has_exports() {
         let code = generate_typescript_code("my-plugin", "My Plugin", "cmd");
 
-        assert!(code.contains("export function init"), "TypeScript code should export init");
-        assert!(code.contains("export function shutdown"), "TypeScript code should export shutdown");
+        assert!(
+            code.contains("export function init"),
+            "TypeScript code should export init"
+        );
+        assert!(
+            code.contains("export function shutdown"),
+            "TypeScript code should export shutdown"
+        );
     }
 
     #[test]
     fn test_generate_typescript_code_contains_plugin_id() {
         let code = generate_typescript_code("custom-plugin-id", "Plugin", "cmd");
 
-        assert!(code.contains("custom-plugin-id"), "TypeScript code should contain plugin ID");
+        assert!(
+            code.contains("custom-plugin-id"),
+            "TypeScript code should contain plugin ID"
+        );
     }
 
     #[test]
     fn test_generate_typescript_code_has_command_handler() {
         let code = generate_typescript_code("plugin", "Plugin", "my-command");
 
-        assert!(code.contains("cmd_my_command"), "TypeScript code should have command handler");
+        assert!(
+            code.contains("cmd_my_command"),
+            "TypeScript code should have command handler"
+        );
     }
 
     // ==========================================================================
@@ -3559,7 +3788,10 @@ mod tests {
         let json = serde_json::to_string(&issue).expect("should serialize ValidationIssue");
 
         assert!(json.contains("error"), "JSON should contain severity");
-        assert!(json.contains("Test error message"), "JSON should contain message");
+        assert!(
+            json.contains("Test error message"),
+            "JSON should contain message"
+        );
         assert!(json.contains("test_field"), "JSON should contain field");
     }
 
@@ -3573,8 +3805,14 @@ mod tests {
 
         let json = serde_json::to_string(&issue).expect("should serialize ValidationIssue");
 
-        assert!(json.contains("warning"), "JSON should contain warning severity");
-        assert!(!json.contains("field"), "JSON should not contain field when None");
+        assert!(
+            json.contains("warning"),
+            "JSON should contain warning severity"
+        );
+        assert!(
+            !json.contains("field"),
+            "JSON should not contain field when None"
+        );
     }
 
     #[test]
@@ -3586,7 +3824,10 @@ mod tests {
         };
 
         let json = serde_json::to_string(&issue).expect("should serialize");
-        assert!(json.contains("\"severity\":\"error\""), "Error severity should serialize to 'error'");
+        assert!(
+            json.contains("\"severity\":\"error\""),
+            "Error severity should serialize to 'error'"
+        );
     }
 
     #[test]
@@ -3598,7 +3839,10 @@ mod tests {
         };
 
         let json = serde_json::to_string(&issue).expect("should serialize");
-        assert!(json.contains("\"severity\":\"warning\""), "Warning severity should serialize to 'warning'");
+        assert!(
+            json.contains("\"severity\":\"warning\""),
+            "Warning severity should serialize to 'warning'"
+        );
     }
 
     #[test]
@@ -3610,7 +3854,10 @@ mod tests {
         };
 
         let json = serde_json::to_string(&issue).expect("should serialize");
-        assert!(json.contains("\"severity\":\"info\""), "Info severity should serialize to 'info'");
+        assert!(
+            json.contains("\"severity\":\"info\""),
+            "Info severity should serialize to 'info'"
+        );
     }
 
     #[test]
@@ -3632,9 +3879,18 @@ mod tests {
 
         let json = serde_json::to_string(&result).expect("should serialize ValidationResult");
 
-        assert!(json.contains("\"valid\":true"), "JSON should contain valid: true");
-        assert!(json.contains("test-plugin"), "JSON should contain plugin_id");
-        assert!(json.contains("\"issues\":[]"), "JSON should contain empty issues array");
+        assert!(
+            json.contains("\"valid\":true"),
+            "JSON should contain valid: true"
+        );
+        assert!(
+            json.contains("test-plugin"),
+            "JSON should contain plugin_id"
+        );
+        assert!(
+            json.contains("\"issues\":[]"),
+            "JSON should contain empty issues array"
+        );
     }
 
     #[test]
@@ -3642,19 +3898,23 @@ mod tests {
         let result = ValidationResult {
             valid: false,
             plugin_id: Some("broken-plugin".to_string()),
-            issues: vec![
-                ValidationIssue {
-                    severity: ValidationSeverity::Error,
-                    message: "Missing required field".to_string(),
-                    field: Some("id".to_string()),
-                },
-            ],
+            issues: vec![ValidationIssue {
+                severity: ValidationSeverity::Error,
+                message: "Missing required field".to_string(),
+                field: Some("id".to_string()),
+            }],
         };
 
         let json = serde_json::to_string(&result).expect("should serialize ValidationResult");
 
-        assert!(json.contains("\"valid\":false"), "JSON should contain valid: false");
-        assert!(json.contains("Missing required field"), "JSON should contain issue message");
+        assert!(
+            json.contains("\"valid\":false"),
+            "JSON should contain valid: false"
+        );
+        assert!(
+            json.contains("Missing required field"),
+            "JSON should contain issue message"
+        );
     }
 
     #[test]
@@ -3693,18 +3953,19 @@ mod tests {
         let result = ValidationResult {
             valid: false,
             plugin_id: None,
-            issues: vec![
-                ValidationIssue {
-                    severity: ValidationSeverity::Error,
-                    message: "plugin.toml not found".to_string(),
-                    field: None,
-                },
-            ],
+            issues: vec![ValidationIssue {
+                severity: ValidationSeverity::Error,
+                message: "plugin.toml not found".to_string(),
+                field: None,
+            }],
         };
 
         let json = serde_json::to_string(&result).expect("should serialize");
 
-        assert!(json.contains("\"plugin_id\":null"), "JSON should contain null plugin_id");
+        assert!(
+            json.contains("\"plugin_id\":null"),
+            "JSON should contain null plugin_id"
+        );
     }
 
     // ==========================================================================
@@ -3725,9 +3986,16 @@ mod tests {
 
         match subcmd {
             PluginSubcommand::New(new_args) => {
-                assert_eq!(new_args.name, "new-plugin", "New variant should contain correct name");
+                assert_eq!(
+                    new_args.name, "new-plugin",
+                    "New variant should contain correct name"
+                );
                 assert!(new_args.advanced, "New variant should have advanced flag");
-                assert_eq!(new_args.author, Some("Test Author".to_string()), "New variant should have author");
+                assert_eq!(
+                    new_args.author,
+                    Some("Test Author".to_string()),
+                    "New variant should have author"
+                );
             }
             _ => panic!("Expected New variant"),
         }
@@ -3744,9 +4012,16 @@ mod tests {
 
         match subcmd {
             PluginSubcommand::Dev(dev_args) => {
-                assert_eq!(dev_args.path, Some(PathBuf::from("./dev-path")), "Dev variant should contain correct path");
+                assert_eq!(
+                    dev_args.path,
+                    Some(PathBuf::from("./dev-path")),
+                    "Dev variant should contain correct path"
+                );
                 assert!(dev_args.watch, "Dev variant should have watch flag");
-                assert_eq!(dev_args.debounce_ms, 750, "Dev variant should have correct debounce_ms");
+                assert_eq!(
+                    dev_args.debounce_ms, 750,
+                    "Dev variant should have correct debounce_ms"
+                );
             }
             _ => panic!("Expected Dev variant"),
         }
@@ -3763,9 +4038,17 @@ mod tests {
 
         match subcmd {
             PluginSubcommand::Build(build_args) => {
-                assert_eq!(build_args.path, Some(PathBuf::from("./build-path")), "Build variant should contain correct path");
+                assert_eq!(
+                    build_args.path,
+                    Some(PathBuf::from("./build-path")),
+                    "Build variant should contain correct path"
+                );
                 assert!(build_args.debug, "Build variant should have debug flag");
-                assert_eq!(build_args.output, Some(PathBuf::from("./out.wasm")), "Build variant should have output");
+                assert_eq!(
+                    build_args.output,
+                    Some(PathBuf::from("./out.wasm")),
+                    "Build variant should have output"
+                );
             }
             _ => panic!("Expected Build variant"),
         }
@@ -3782,9 +4065,16 @@ mod tests {
 
         match subcmd {
             PluginSubcommand::Validate(validate_args) => {
-                assert_eq!(validate_args.path, Some(PathBuf::from("./validate-path")), "Validate variant should contain correct path");
+                assert_eq!(
+                    validate_args.path,
+                    Some(PathBuf::from("./validate-path")),
+                    "Validate variant should contain correct path"
+                );
                 assert!(validate_args.json, "Validate variant should have json flag");
-                assert!(validate_args.verbose, "Validate variant should have verbose flag");
+                assert!(
+                    validate_args.verbose,
+                    "Validate variant should have verbose flag"
+                );
             }
             _ => panic!("Expected Validate variant"),
         }
@@ -3801,9 +4091,20 @@ mod tests {
 
         match subcmd {
             PluginSubcommand::Publish(publish_args) => {
-                assert_eq!(publish_args.path, Some(PathBuf::from("./publish-path")), "Publish variant should contain correct path");
-                assert!(!publish_args.dry_run, "Publish variant should have dry_run false");
-                assert_eq!(publish_args.output, Some(PathBuf::from("./plugin.tar.gz")), "Publish variant should have output");
+                assert_eq!(
+                    publish_args.path,
+                    Some(PathBuf::from("./publish-path")),
+                    "Publish variant should contain correct path"
+                );
+                assert!(
+                    !publish_args.dry_run,
+                    "Publish variant should have dry_run false"
+                );
+                assert_eq!(
+                    publish_args.output,
+                    Some(PathBuf::from("./plugin.tar.gz")),
+                    "Publish variant should have output"
+                );
             }
             _ => panic!("Expected Publish variant"),
         }
@@ -3826,7 +4127,10 @@ mod tests {
         let new_cmd = cmd.get_subcommands().find(|c| c.get_name() == "new");
         if let Some(new) = new_cmd {
             let aliases: Vec<_> = new.get_visible_aliases().collect();
-            assert!(aliases.contains(&"create"), "new command should have 'create' alias");
+            assert!(
+                aliases.contains(&"create"),
+                "new command should have 'create' alias"
+            );
         }
     }
 
@@ -3841,14 +4145,20 @@ mod tests {
     fn test_plugin_cli_has_build_subcommand() {
         let cmd = PluginCli::command();
         let build_cmd = cmd.get_subcommands().find(|c| c.get_name() == "build");
-        assert!(build_cmd.is_some(), "PluginCli should have 'build' subcommand");
+        assert!(
+            build_cmd.is_some(),
+            "PluginCli should have 'build' subcommand"
+        );
     }
 
     #[test]
     fn test_plugin_cli_has_validate_subcommand() {
         let cmd = PluginCli::command();
         let validate_cmd = cmd.get_subcommands().find(|c| c.get_name() == "validate");
-        assert!(validate_cmd.is_some(), "PluginCli should have 'validate' subcommand");
+        assert!(
+            validate_cmd.is_some(),
+            "PluginCli should have 'validate' subcommand"
+        );
     }
 
     #[test]
@@ -3857,7 +4167,10 @@ mod tests {
         let validate_cmd = cmd.get_subcommands().find(|c| c.get_name() == "validate");
         if let Some(validate) = validate_cmd {
             let aliases: Vec<_> = validate.get_visible_aliases().collect();
-            assert!(aliases.contains(&"check"), "validate command should have 'check' alias");
+            assert!(
+                aliases.contains(&"check"),
+                "validate command should have 'check' alias"
+            );
         }
     }
 
@@ -3865,14 +4178,17 @@ mod tests {
     fn test_plugin_cli_has_publish_subcommand() {
         let cmd = PluginCli::command();
         let publish_cmd = cmd.get_subcommands().find(|c| c.get_name() == "publish");
-        assert!(publish_cmd.is_some(), "PluginCli should have 'publish' subcommand");
+        assert!(
+            publish_cmd.is_some(),
+            "PluginCli should have 'publish' subcommand"
+        );
     }
 
     #[test]
     fn test_plugin_cli_all_subcommands_count() {
         let cmd = PluginCli::command();
         let subcommand_count = cmd.get_subcommands().count();
-        
+
         // Expected: list, install, remove, enable, disable, show, new, dev, build, validate, publish = 11
         assert_eq!(subcommand_count, 11, "PluginCli should have 11 subcommands");
     }
@@ -3898,10 +4214,15 @@ mod tests {
         validate_capabilities(&caps, &mut result, false);
 
         // Should not have any warnings for known capabilities
-        let warnings: Vec<_> = result.issues.iter()
+        let warnings: Vec<_> = result
+            .issues
+            .iter()
             .filter(|i| i.severity == ValidationSeverity::Warning)
             .collect();
-        assert!(warnings.is_empty(), "Known capabilities should not produce warnings");
+        assert!(
+            warnings.is_empty(),
+            "Known capabilities should not produce warnings"
+        );
     }
 
     #[test]
@@ -3919,11 +4240,17 @@ mod tests {
 
         validate_capabilities(&caps, &mut result, false);
 
-        let warnings: Vec<_> = result.issues.iter()
+        let warnings: Vec<_> = result
+            .issues
+            .iter()
             .filter(|i| i.severity == ValidationSeverity::Warning)
             .filter(|i| i.message.contains("unknown_capability"))
             .collect();
-        assert_eq!(warnings.len(), 1, "Unknown capability should produce warning");
+        assert_eq!(
+            warnings.len(),
+            1,
+            "Unknown capability should produce warning"
+        );
     }
 
     #[test]
@@ -3941,24 +4268,30 @@ mod tests {
 
         validate_capabilities(&caps, &mut result, true);
 
-        let info_issues: Vec<_> = result.issues.iter()
+        let info_issues: Vec<_> = result
+            .issues
+            .iter()
             .filter(|i| i.severity == ValidationSeverity::Info)
             .collect();
         assert_eq!(info_issues.len(), 1, "Verbose mode should add info issue");
-        assert!(info_issues[0].message.contains("2"), "Info should mention capability count");
+        assert!(
+            info_issues[0].message.contains("2"),
+            "Info should mention capability count"
+        );
     }
 
     #[test]
     fn test_validate_permissions_known_types() {
-        let perms = vec![
-            toml::Value::Table({
-                let mut t = toml::map::Map::new();
-                let mut read_file = toml::map::Map::new();
-                read_file.insert("paths".to_string(), toml::Value::Array(vec![toml::Value::String("src/**".to_string())]));
-                t.insert("read_file".to_string(), toml::Value::Table(read_file));
-                t
-            }),
-        ];
+        let perms = vec![toml::Value::Table({
+            let mut t = toml::map::Map::new();
+            let mut read_file = toml::map::Map::new();
+            read_file.insert(
+                "paths".to_string(),
+                toml::Value::Array(vec![toml::Value::String("src/**".to_string())]),
+            );
+            t.insert("read_file".to_string(), toml::Value::Table(read_file));
+            t
+        })];
 
         let mut result = ValidationResult {
             valid: true,
@@ -3968,22 +4301,28 @@ mod tests {
 
         validate_permissions(&perms, &mut result, false);
 
-        let warnings: Vec<_> = result.issues.iter()
+        let warnings: Vec<_> = result
+            .issues
+            .iter()
             .filter(|i| i.severity == ValidationSeverity::Warning)
             .filter(|i| i.message.contains("Unknown permission"))
             .collect();
-        assert!(warnings.is_empty(), "Known permission types should not produce unknown warning");
+        assert!(
+            warnings.is_empty(),
+            "Known permission types should not produce unknown warning"
+        );
     }
 
     #[test]
     fn test_validate_permissions_unknown_type() {
-        let perms = vec![
-            toml::Value::Table({
-                let mut t = toml::map::Map::new();
-                t.insert("unknown_permission".to_string(), toml::Value::String("value".to_string()));
-                t
-            }),
-        ];
+        let perms = vec![toml::Value::Table({
+            let mut t = toml::map::Map::new();
+            t.insert(
+                "unknown_permission".to_string(),
+                toml::Value::String("value".to_string()),
+            );
+            t
+        })];
 
         let mut result = ValidationResult {
             valid: true,
@@ -3993,24 +4332,31 @@ mod tests {
 
         validate_permissions(&perms, &mut result, false);
 
-        let warnings: Vec<_> = result.issues.iter()
+        let warnings: Vec<_> = result
+            .issues
+            .iter()
             .filter(|i| i.severity == ValidationSeverity::Warning)
             .filter(|i| i.message.contains("Unknown permission type"))
             .collect();
-        assert_eq!(warnings.len(), 1, "Unknown permission type should produce warning");
+        assert_eq!(
+            warnings.len(),
+            1,
+            "Unknown permission type should produce warning"
+        );
     }
 
     #[test]
     fn test_validate_permissions_overly_broad_path() {
-        let perms = vec![
-            toml::Value::Table({
-                let mut t = toml::map::Map::new();
-                let mut read_file = toml::map::Map::new();
-                read_file.insert("paths".to_string(), toml::Value::Array(vec![toml::Value::String("**/*".to_string())]));
-                t.insert("read_file".to_string(), toml::Value::Table(read_file));
-                t
-            }),
-        ];
+        let perms = vec![toml::Value::Table({
+            let mut t = toml::map::Map::new();
+            let mut read_file = toml::map::Map::new();
+            read_file.insert(
+                "paths".to_string(),
+                toml::Value::Array(vec![toml::Value::String("**/*".to_string())]),
+            );
+            t.insert("read_file".to_string(), toml::Value::Table(read_file));
+            t
+        })];
 
         let mut result = ValidationResult {
             valid: true,
@@ -4020,11 +4366,17 @@ mod tests {
 
         validate_permissions(&perms, &mut result, false);
 
-        let warnings: Vec<_> = result.issues.iter()
+        let warnings: Vec<_> = result
+            .issues
+            .iter()
             .filter(|i| i.severity == ValidationSeverity::Warning)
             .filter(|i| i.message.contains("Overly broad"))
             .collect();
-        assert_eq!(warnings.len(), 1, "Overly broad path should produce warning");
+        assert_eq!(
+            warnings.len(),
+            1,
+            "Overly broad path should produce warning"
+        );
     }
 
     #[test]
@@ -4033,13 +4385,19 @@ mod tests {
             toml::Value::Table({
                 let mut t = toml::map::Map::new();
                 let mut read_file = toml::map::Map::new();
-                read_file.insert("paths".to_string(), toml::Value::Array(vec![toml::Value::String("src/**".to_string())]));
+                read_file.insert(
+                    "paths".to_string(),
+                    toml::Value::Array(vec![toml::Value::String("src/**".to_string())]),
+                );
                 t.insert("read_file".to_string(), toml::Value::Table(read_file));
                 t
             }),
             toml::Value::Table({
                 let mut t = toml::map::Map::new();
-                t.insert("network".to_string(), toml::Value::Table(toml::map::Map::new()));
+                t.insert(
+                    "network".to_string(),
+                    toml::Value::Table(toml::map::Map::new()),
+                );
                 t
             }),
         ];
@@ -4052,10 +4410,15 @@ mod tests {
 
         validate_permissions(&perms, &mut result, true);
 
-        let info_issues: Vec<_> = result.issues.iter()
+        let info_issues: Vec<_> = result
+            .issues
+            .iter()
             .filter(|i| i.severity == ValidationSeverity::Info)
             .collect();
         assert_eq!(info_issues.len(), 1, "Verbose mode should add info issue");
-        assert!(info_issues[0].message.contains("2"), "Info should mention permission count");
+        assert!(
+            info_issues[0].message.contains("2"),
+            "Info should mention permission count"
+        );
     }
 }

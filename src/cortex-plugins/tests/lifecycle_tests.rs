@@ -14,15 +14,15 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use tempfile::TempDir;
 
+use cortex_plugins::manifest::{PluginManifest, PluginMetadata, WasmSettings};
+use cortex_plugins::plugin::Plugin;
+use cortex_plugins::registry::PluginRegistry;
+use cortex_plugins::runtime::WasmRuntime;
 use cortex_plugins::{
     HookDispatcher, HookPriority, HookRegistry, HookResult, PluginCommand, PluginCommandRegistry,
     PluginConfig, PluginContext, PluginError, PluginInfo, PluginManager, PluginState,
     ToolExecuteBeforeHook, ToolExecuteBeforeInput, ToolExecuteBeforeOutput,
 };
-use cortex_plugins::manifest::{PluginManifest, PluginMetadata, WasmSettings};
-use cortex_plugins::plugin::Plugin;
-use cortex_plugins::registry::PluginRegistry;
-use cortex_plugins::runtime::WasmRuntime;
 
 // =============================================================================
 // Mock Plugin Implementation for Testing
@@ -74,7 +74,6 @@ impl MockPlugin {
         self.state = state;
         self
     }
-
 }
 
 #[async_trait]
@@ -184,7 +183,10 @@ impl Plugin for FailingInitPlugin {
     }
 
     async fn init(&mut self) -> cortex_plugins::Result<()> {
-        Err(PluginError::init_error(&self.info.id, "Simulated init failure"))
+        Err(PluginError::init_error(
+            &self.info.id,
+            "Simulated init failure",
+        ))
     }
 
     async fn shutdown(&mut self) -> cortex_plugins::Result<()> {
@@ -198,7 +200,10 @@ impl Plugin for FailingInitPlugin {
         _args: Vec<String>,
         _ctx: &PluginContext,
     ) -> cortex_plugins::Result<String> {
-        Err(PluginError::execution_error(&self.info.id, "Plugin not initialized"))
+        Err(PluginError::execution_error(
+            &self.info.id,
+            "Plugin not initialized",
+        ))
     }
 
     fn get_config(&self, _key: &str) -> Option<serde_json::Value> {
@@ -287,10 +292,15 @@ mod discovery_tests {
             ..Default::default()
         };
 
-        let manager = PluginManager::new(config).await.expect("Failed to create manager");
+        let manager = PluginManager::new(config)
+            .await
+            .expect("Failed to create manager");
         let discovered = manager.discover().await;
 
-        assert!(discovered.is_empty(), "Expected no plugins in empty directory");
+        assert!(
+            discovered.is_empty(),
+            "Expected no plugins in empty directory"
+        );
     }
 
     #[tokio::test]
@@ -300,10 +310,15 @@ mod discovery_tests {
             ..Default::default()
         };
 
-        let manager = PluginManager::new(config).await.expect("Failed to create manager");
+        let manager = PluginManager::new(config)
+            .await
+            .expect("Failed to create manager");
         let discovered = manager.discover().await;
 
-        assert!(discovered.is_empty(), "Expected no plugins from nonexistent path");
+        assert!(
+            discovered.is_empty(),
+            "Expected no plugins from nonexistent path"
+        );
     }
 
     #[tokio::test]
@@ -316,7 +331,9 @@ mod discovery_tests {
             ..Default::default()
         };
 
-        let manager = PluginManager::new(config).await.expect("Failed to create manager");
+        let manager = PluginManager::new(config)
+            .await
+            .expect("Failed to create manager");
         let discovered = manager.discover().await;
 
         assert_eq!(discovered.len(), 1, "Expected exactly one plugin");
@@ -335,7 +352,9 @@ mod discovery_tests {
             ..Default::default()
         };
 
-        let manager = PluginManager::new(config).await.expect("Failed to create manager");
+        let manager = PluginManager::new(config)
+            .await
+            .expect("Failed to create manager");
         let discovered = manager.discover().await;
 
         assert_eq!(discovered.len(), 3, "Expected three plugins");
@@ -367,7 +386,9 @@ mod discovery_tests {
             ..Default::default()
         };
 
-        let manager = PluginManager::new(config).await.expect("Failed to create manager");
+        let manager = PluginManager::new(config)
+            .await
+            .expect("Failed to create manager");
         let discovered = manager.discover().await;
 
         assert_eq!(discovered.len(), 1, "Should only discover valid plugin");
@@ -390,7 +411,9 @@ mod discovery_tests {
             ..Default::default()
         };
 
-        let manager = PluginManager::new(config).await.expect("Failed to create manager");
+        let manager = PluginManager::new(config)
+            .await
+            .expect("Failed to create manager");
         let discovered = manager.discover().await;
 
         assert_eq!(discovered.len(), 2, "Expected plugins from both paths");
@@ -415,16 +438,30 @@ mod discovery_tests {
             ..Default::default()
         };
 
-        let manager = PluginManager::new(config).await.expect("Failed to create manager");
+        let manager = PluginManager::new(config)
+            .await
+            .expect("Failed to create manager");
         let discovered = manager.discover().await;
 
         assert_eq!(discovered.len(), 2, "Should discover both plugins");
 
-        let with_wasm = discovered.iter().find(|p| p.id() == "plugin-with-wasm").unwrap();
-        let without_wasm = discovered.iter().find(|p| p.id() == "plugin-without-wasm").unwrap();
+        let with_wasm = discovered
+            .iter()
+            .find(|p| p.id() == "plugin-with-wasm")
+            .unwrap();
+        let without_wasm = discovered
+            .iter()
+            .find(|p| p.id() == "plugin-without-wasm")
+            .unwrap();
 
-        assert!(with_wasm.has_wasm, "Plugin with WASM should have has_wasm=true");
-        assert!(!without_wasm.has_wasm, "Plugin without WASM should have has_wasm=false");
+        assert!(
+            with_wasm.has_wasm,
+            "Plugin with WASM should have has_wasm=true"
+        );
+        assert!(
+            !without_wasm.has_wasm,
+            "Plugin without WASM should have has_wasm=false"
+        );
     }
 }
 
@@ -596,7 +633,9 @@ mod registry_tests {
             .await
             .unwrap();
 
-        let result = registry.register(Box::new(MockPlugin::new("dup-plugin"))).await;
+        let result = registry
+            .register(Box::new(MockPlugin::new("dup-plugin")))
+            .await;
         assert!(result.is_err());
 
         match result {
@@ -851,7 +890,7 @@ mod lifecycle_tests {
         registry.register(Box::new(plugin)).await.unwrap();
 
         let handle = registry.get("counter-test").await.unwrap();
-        
+
         // Verify initial state
         assert_eq!(handle.state().await, PluginState::Loaded);
 
@@ -872,7 +911,7 @@ mod lifecycle_tests {
         registry.register(Box::new(plugin)).await.unwrap();
 
         let handle = registry.get("wrong-state").await.unwrap();
-        
+
         let result = {
             let mut p = handle.write().await;
             p.init().await
@@ -1134,7 +1173,10 @@ mod hook_tests {
             call_id: "call-1".to_string(),
             args: serde_json::json!({}),
         };
-        let output = dispatcher.trigger_tool_execute_before(input_read).await.unwrap();
+        let output = dispatcher
+            .trigger_tool_execute_before(input_read)
+            .await
+            .unwrap();
         assert_eq!(output.args["hook_executed"], true);
 
         // Should match "read_file"
@@ -1144,7 +1186,10 @@ mod hook_tests {
             call_id: "call-2".to_string(),
             args: serde_json::json!({}),
         };
-        let output = dispatcher.trigger_tool_execute_before(input_read_file).await.unwrap();
+        let output = dispatcher
+            .trigger_tool_execute_before(input_read_file)
+            .await
+            .unwrap();
         assert_eq!(output.args["hook_executed"], true);
 
         // Should NOT match "write"
@@ -1154,7 +1199,10 @@ mod hook_tests {
             call_id: "call-3".to_string(),
             args: serde_json::json!({}),
         };
-        let output = dispatcher.trigger_tool_execute_before(input_write).await.unwrap();
+        let output = dispatcher
+            .trigger_tool_execute_before(input_write)
+            .await
+            .unwrap();
         assert!(output.args.get("hook_executed").is_none());
     }
 
@@ -1205,7 +1253,10 @@ mod command_tests {
     fn create_test_executor() -> CommandExecutor {
         Arc::new(|args, _ctx| {
             Box::pin(async move {
-                Ok(PluginCommandResult::success(format!("Executed with {} args", args.len())))
+                Ok(PluginCommandResult::success(format!(
+                    "Executed with {} args",
+                    args.len()
+                )))
             })
         })
     }
@@ -1228,7 +1279,10 @@ mod command_tests {
         let cmd1 = create_test_command("plugin-1", "dup-cmd");
         let cmd2 = create_test_command("plugin-2", "dup-cmd");
 
-        registry.register(cmd1, create_test_executor()).await.unwrap();
+        registry
+            .register(cmd1, create_test_executor())
+            .await
+            .unwrap();
         let result = registry.register(cmd2, create_test_executor()).await;
 
         assert!(result.is_err());
@@ -1239,7 +1293,10 @@ mod command_tests {
         let registry = PluginCommandRegistry::new();
         let cmd = create_test_command("test-plugin", "mycommand");
 
-        registry.register(cmd, create_test_executor()).await.unwrap();
+        registry
+            .register(cmd, create_test_executor())
+            .await
+            .unwrap();
 
         // Should find by name
         assert!(registry.exists("mycommand").await);
@@ -1252,11 +1309,18 @@ mod command_tests {
         let registry = PluginCommandRegistry::new();
         let cmd = create_test_command("test-plugin", "exec-test");
 
-        registry.register(cmd, create_test_executor()).await.unwrap();
+        registry
+            .register(cmd, create_test_executor())
+            .await
+            .unwrap();
 
         let ctx = PluginContext::default();
         let result = registry
-            .execute("exec-test", vec!["arg1".to_string(), "arg2".to_string()], &ctx)
+            .execute(
+                "exec-test",
+                vec!["arg1".to_string(), "arg2".to_string()],
+                &ctx,
+            )
             .await;
 
         assert!(result.is_ok());
@@ -1288,8 +1352,14 @@ mod command_tests {
         let cmd1 = create_test_command("plugin-a", "cmd-a");
         let cmd2 = create_test_command("plugin-b", "cmd-b");
 
-        registry.register(cmd1, create_test_executor()).await.unwrap();
-        registry.register(cmd2, create_test_executor()).await.unwrap();
+        registry
+            .register(cmd1, create_test_executor())
+            .await
+            .unwrap();
+        registry
+            .register(cmd2, create_test_executor())
+            .await
+            .unwrap();
 
         assert!(registry.exists("cmd-a").await);
         assert!(registry.exists("cmd-b").await);
@@ -1305,11 +1375,17 @@ mod command_tests {
         let registry = PluginCommandRegistry::new();
 
         registry
-            .register(create_test_command("plugin", "cmd-1"), create_test_executor())
+            .register(
+                create_test_command("plugin", "cmd-1"),
+                create_test_executor(),
+            )
             .await
             .unwrap();
         registry
-            .register(create_test_command("plugin", "cmd-2"), create_test_executor())
+            .register(
+                create_test_command("plugin", "cmd-2"),
+                create_test_executor(),
+            )
             .await
             .unwrap();
 
@@ -1344,15 +1420,24 @@ mod command_tests {
         let registry = PluginCommandRegistry::new();
 
         registry
-            .register(create_test_command("plugin-a", "cmd-a1"), create_test_executor())
+            .register(
+                create_test_command("plugin-a", "cmd-a1"),
+                create_test_executor(),
+            )
             .await
             .unwrap();
         registry
-            .register(create_test_command("plugin-a", "cmd-a2"), create_test_executor())
+            .register(
+                create_test_command("plugin-a", "cmd-a2"),
+                create_test_executor(),
+            )
             .await
             .unwrap();
         registry
-            .register(create_test_command("plugin-b", "cmd-b1"), create_test_executor())
+            .register(
+                create_test_command("plugin-b", "cmd-b1"),
+                create_test_executor(),
+            )
             .await
             .unwrap();
 
@@ -1368,7 +1453,10 @@ mod command_tests {
         let registry = PluginCommandRegistry::new();
 
         registry
-            .register(create_test_command("plugin", "mycmd"), create_test_executor())
+            .register(
+                create_test_command("plugin", "mycmd"),
+                create_test_executor(),
+            )
             .await
             .unwrap();
 
@@ -1498,7 +1586,10 @@ mod wasm_runtime_tests {
     #[test]
     fn test_wasm_runtime_creation() {
         let runtime = WasmRuntime::new();
-        assert!(runtime.is_ok(), "WasmRuntime should be created successfully");
+        assert!(
+            runtime.is_ok(),
+            "WasmRuntime should be created successfully"
+        );
     }
 
     #[test]
@@ -1528,18 +1619,18 @@ mod wasm_runtime_tests {
         let manifest_content = create_valid_manifest("test-plugin", "Test", "1.0.0");
         let manifest = PluginManifest::parse(&manifest_content).unwrap();
 
-        let plugin_result = cortex_plugins::WasmPlugin::new(
-            manifest,
-            temp_dir.path().to_path_buf(),
-            runtime,
-        );
+        let plugin_result =
+            cortex_plugins::WasmPlugin::new(manifest, temp_dir.path().to_path_buf(), runtime);
 
         assert!(plugin_result.is_ok());
 
         let mut plugin = plugin_result.unwrap();
         let load_result = plugin.load();
 
-        assert!(load_result.is_err(), "Should fail to load non-existent WASM file");
+        assert!(
+            load_result.is_err(),
+            "Should fail to load non-existent WASM file"
+        );
         match load_result {
             Err(PluginError::LoadError { plugin, message }) => {
                 assert_eq!(plugin, "test-plugin");
@@ -1600,10 +1691,13 @@ mod config_tests {
     fn test_plugin_config_get_set() {
         let mut config = PluginConfig::default();
 
-        config.set_plugin_config("my-plugin", serde_json::json!({
-            "option1": true,
-            "option2": "value"
-        }));
+        config.set_plugin_config(
+            "my-plugin",
+            serde_json::json!({
+                "option1": true,
+                "option2": "value"
+            }),
+        );
 
         let plugin_config = config.get_plugin_config("my-plugin").unwrap();
         assert_eq!(plugin_config["option1"], true);
