@@ -183,11 +183,8 @@ impl EventLoop {
             };
 
             // Start the completion request with timeout
-            let stream_result = tokio::time::timeout(
-                STREAMING_CONNECTION_TIMEOUT,
-                client.complete(request),
-            )
-            .await;
+            let stream_result =
+                tokio::time::timeout(STREAMING_CONNECTION_TIMEOUT, client.complete(request)).await;
 
             let mut stream = match stream_result {
                 Ok(Ok(s)) => s,
@@ -222,11 +219,7 @@ impl EventLoop {
                 }
 
                 // Wait for next event with timeout
-                let event = tokio::time::timeout(
-                    STREAMING_CHUNK_TIMEOUT,
-                    stream.next(),
-                )
-                .await;
+                let event = tokio::time::timeout(STREAMING_CHUNK_TIMEOUT, stream.next()).await;
 
                 match event {
                     Ok(Some(Ok(ResponseEvent::Delta(delta)))) => {

@@ -15,8 +15,7 @@ use thiserror::Error;
 /// Group 1: variable name
 /// Group 2: optional default value (after second colon)
 static ENV_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\{env:([^:}]+)(?::([^}]*))?\}")
-        .expect("env regex pattern is valid and tested")
+    Regex::new(r"\{env:([^:}]+)(?::([^}]*))?\}").expect("env regex pattern is valid and tested")
 });
 
 /// Static regex for file content substitution: {file:path}

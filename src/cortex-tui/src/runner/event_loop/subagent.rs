@@ -218,7 +218,8 @@ impl EventLoop {
                 };
 
                 let stream_result =
-                    tokio::time::timeout(SUBAGENT_CONNECTION_TIMEOUT, client.complete(request)).await;
+                    tokio::time::timeout(SUBAGENT_CONNECTION_TIMEOUT, client.complete(request))
+                        .await;
 
                 let mut stream = match stream_result {
                     Ok(Ok(s)) => s,
