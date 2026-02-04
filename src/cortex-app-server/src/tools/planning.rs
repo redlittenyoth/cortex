@@ -70,20 +70,49 @@ pub async fn plan(args: Value) -> ToolResult {
         .get("description")
         .and_then(|v| v.as_str())
         .unwrap_or("");
+    let architecture = args.get("architecture").and_then(|v| v.as_str());
+    let tech_stack = args.get("tech_stack").cloned();
     let tasks = args.get("tasks").cloned().unwrap_or(json!([]));
+    let use_cases = args.get("use_cases").cloned();
+    let agent_analyses = args.get("agent_analyses").cloned().unwrap_or(json!([]));
+    let risks = args.get("risks").cloned();
+    let success_criteria = args.get("success_criteria").cloned();
+    let timeline = args.get("timeline").and_then(|v| v.as_str());
     let estimate = args
         .get("estimated_changes")
         .and_then(|v| v.as_str())
         .unwrap_or("");
 
-    let plan_data = json!({
+    // Build the plan data with all fields
+    let mut plan_data = json!({
         "type": "plan",
         "title": title,
         "description": description,
         "tasks": tasks,
+        "agent_analyses": agent_analyses,
         "estimated_changes": estimate,
         "status": "pending_approval"
     });
+
+    // Add optional fields if present
+    if let Some(arch) = architecture {
+        plan_data["architecture"] = json!(arch);
+    }
+    if let Some(stack) = tech_stack {
+        plan_data["tech_stack"] = stack;
+    }
+    if let Some(cases) = use_cases {
+        plan_data["use_cases"] = cases;
+    }
+    if let Some(risk_list) = risks {
+        plan_data["risks"] = risk_list;
+    }
+    if let Some(criteria) = success_criteria {
+        plan_data["success_criteria"] = criteria;
+    }
+    if let Some(tl) = timeline {
+        plan_data["timeline"] = json!(tl);
+    }
 
     ToolResult {
         success: true,
