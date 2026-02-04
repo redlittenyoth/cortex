@@ -26,12 +26,25 @@ pub struct StreamTokenUsage {
     pub total_tokens: u32,
 }
 
+/// Safely convert an i64 token count to u32 with saturation.
+/// Negative values clamp to 0, values > u32::MAX clamp to u32::MAX.
+#[inline]
+fn saturating_i64_to_u32(value: i64) -> u32 {
+    if value <= 0 {
+        0
+    } else if value > u32::MAX as i64 {
+        u32::MAX
+    } else {
+        value as u32
+    }
+}
+
 impl From<crate::client::TokenUsage> for StreamTokenUsage {
     fn from(usage: crate::client::TokenUsage) -> Self {
         Self {
-            prompt_tokens: usage.input_tokens as u32,
-            completion_tokens: usage.output_tokens as u32,
-            total_tokens: usage.total_tokens as u32,
+            prompt_tokens: saturating_i64_to_u32(usage.input_tokens),
+            completion_tokens: saturating_i64_to_u32(usage.output_tokens),
+            total_tokens: saturating_i64_to_u32(usage.total_tokens),
         }
     }
 }
