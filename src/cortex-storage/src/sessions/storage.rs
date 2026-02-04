@@ -59,22 +59,60 @@ impl SessionStorage {
     // ========================================================================
 
     /// List all sessions, sorted by most recent first.
+    ///
+    /// Returns both successfully loaded sessions and logs any errors encountered during listing.
+    /// This ensures the caller is aware of any issues while still getting available sessions.
     pub async fn list_sessions(&self) -> Result<Vec<SessionSummary>> {
         let mut sessions = Vec::new();
+        let mut errors: Vec<String> = Vec::new();
 
         if !self.paths.sessions_dir.exists() {
             return Ok(sessions);
         }
 
-        let mut entries = fs::read_dir(&self.paths.sessions_dir).await?;
-        while let Some(entry) = entries.next_entry().await? {
-            let path = entry.path();
-            if path.extension().map(|e| e == "json").unwrap_or(false) {
-                match self.load_session_from_path(&path).await {
-                    Ok(session) => sessions.push(session.into()),
-                    Err(e) => warn!(path = %path.display(), error = %e, "Failed to load session"),
+        let mut entries = fs::read_dir(&self.paths.sessions_dir).await.map_err(|e| {
+            StorageError::Io(std::io::Error::new(
+                e.kind(),
+                format!(
+                    "Failed to read sessions directory {:?}: {}",
+                    self.paths.sessions_dir, e
+                ),
+            ))
+        })?;
+
+        loop {
+            let entry_result = entries.next_entry().await;
+            match entry_result {
+                Ok(Some(entry)) => {
+                    let path = entry.path();
+                    if path.extension().map(|e| e == "json").unwrap_or(false) {
+                        match self.load_session_from_path(&path).await {
+                            Ok(session) => sessions.push(session.into()),
+                            Err(e) => {
+                                let error_msg =
+                                    format!("Failed to load session {:?}: {}", path.display(), e);
+                                errors.push(error_msg.clone());
+                                warn!(path = %path.display(), error = %e, "Failed to load session");
+                            }
+                        }
+                    }
+                }
+                Ok(None) => break,
+                Err(e) => {
+                    let error_msg = format!("Failed to read directory entry: {}", e);
+                    errors.push(error_msg);
+                    warn!(error = %e, "Failed to read directory entry during session listing");
                 }
             }
+        }
+
+        // Log aggregate error count if any errors occurred
+        if !errors.is_empty() {
+            warn!(
+                error_count = errors.len(),
+                "Encountered {} error(s) while listing sessions",
+                errors.len()
+            );
         }
 
         // Sort by updated_at descending (newest first)
@@ -83,22 +121,59 @@ impl SessionStorage {
     }
 
     /// List all sessions synchronously.
+    ///
+    /// Returns both successfully loaded sessions and logs any errors encountered during listing.
+    /// This ensures the caller is aware of any issues while still getting available sessions.
     pub fn list_sessions_sync(&self) -> Result<Vec<SessionSummary>> {
         let mut sessions = Vec::new();
+        let mut errors: Vec<String> = Vec::new();
 
         if !self.paths.sessions_dir.exists() {
             return Ok(sessions);
         }
 
-        for entry in std::fs::read_dir(&self.paths.sessions_dir)? {
-            let entry = entry?;
+        let entries = std::fs::read_dir(&self.paths.sessions_dir).map_err(|e| {
+            StorageError::Io(std::io::Error::new(
+                e.kind(),
+                format!(
+                    "Failed to read sessions directory {:?}: {}",
+                    self.paths.sessions_dir, e
+                ),
+            ))
+        })?;
+
+        for entry_result in entries {
+            let entry = match entry_result {
+                Ok(e) => e,
+                Err(e) => {
+                    let error_msg = format!("Failed to read directory entry: {}", e);
+                    errors.push(error_msg);
+                    warn!(error = %e, "Failed to read directory entry during session listing");
+                    continue;
+                }
+            };
+
             let path = entry.path();
             if path.extension().map(|e| e == "json").unwrap_or(false) {
                 match self.load_session_from_path_sync(&path) {
                     Ok(session) => sessions.push(session.into()),
-                    Err(e) => warn!(path = %path.display(), error = %e, "Failed to load session"),
+                    Err(e) => {
+                        let error_msg =
+                            format!("Failed to load session {:?}: {}", path.display(), e);
+                        errors.push(error_msg);
+                        warn!(path = %path.display(), error = %e, "Failed to load session");
+                    }
                 }
             }
+        }
+
+        // Log aggregate error count if any errors occurred
+        if !errors.is_empty() {
+            warn!(
+                error_count = errors.len(),
+                "Encountered {} error(s) while listing sessions",
+                errors.len()
+            );
         }
 
         sessions.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
@@ -438,7 +513,9 @@ impl SessionStorage {
 
 impl Default for SessionStorage {
     fn default() -> Self {
-        Self::new().expect("Failed to create session storage")
+        Self::new().expect(
+            "SessionStorage initialization failed - check directory permissions and disk space",
+        )
     }
 }
 

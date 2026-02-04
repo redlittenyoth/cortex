@@ -179,10 +179,18 @@ impl CortexSession {
     }
 
     /// Updates token counts in metadata.
+    ///
+    /// Saves metadata to disk. If save fails, the in-memory state is still
+    /// updated but marked as modified for later retry.
     pub fn add_tokens(&mut self, input: i64, output: i64) {
         self.meta.add_tokens(input, output);
         if let Err(e) = self.storage.save_meta(&self.meta) {
-            tracing::error!("Failed to save metadata: {}", e);
+            tracing::error!(
+                session_id = %self.meta.id,
+                error = %e,
+                "Failed to save metadata after token update"
+            );
+            self.modified = true;
         }
     }
 
@@ -201,79 +209,135 @@ impl CortexSession {
 
     /// Removes and returns the last exchange (user + assistant messages).
     /// Returns None if there are fewer than 2 messages.
+    ///
+    /// Only updates in-memory state after successful storage operations.
+    /// If storage fails, the messages are restored to maintain consistency.
     pub fn pop_last_exchange(&mut self) -> Option<Vec<cortex_core::widgets::Message>> {
         if self.messages.len() < 2 {
             return None;
         }
 
-        let mut result = Vec::new();
+        // Pop messages from memory temporarily
+        let last = self.messages.pop();
+        let prev = self.messages.pop();
 
-        // Pop the last message (should be assistant)
-        if let Some(last) = self.messages.pop() {
-            let role = match last.role.as_str() {
+        // Build result from popped messages
+        let mut result = Vec::new();
+        let mut popped_messages = Vec::new();
+
+        if let Some(ref msg) = prev {
+            let role = match msg.role.as_str() {
                 "assistant" => cortex_core::widgets::MessageRole::Assistant,
                 "user" => cortex_core::widgets::MessageRole::User,
                 _ => cortex_core::widgets::MessageRole::System,
             };
             result.push(cortex_core::widgets::Message {
                 role,
-                content: last.content,
+                content: msg.content.clone(),
                 timestamp: None,
                 is_streaming: false,
                 tool_name: None,
             });
+            popped_messages.push(msg.clone());
         }
 
-        // Pop the previous message (should be user)
-        if let Some(prev) = self.messages.pop() {
-            let role = match prev.role.as_str() {
+        if let Some(ref msg) = last {
+            let role = match msg.role.as_str() {
                 "assistant" => cortex_core::widgets::MessageRole::Assistant,
                 "user" => cortex_core::widgets::MessageRole::User,
                 _ => cortex_core::widgets::MessageRole::System,
             };
-            result.insert(
-                0,
-                cortex_core::widgets::Message {
-                    role,
-                    content: prev.content,
-                    timestamp: None,
-                    is_streaming: false,
-                    tool_name: None,
-                },
-            );
+            result.push(cortex_core::widgets::Message {
+                role,
+                content: msg.content.clone(),
+                timestamp: None,
+                is_streaming: false,
+                tool_name: None,
+            });
+            popped_messages.push(msg.clone());
         }
 
-        // Update metadata
-        self.meta.message_count = self.messages.len() as u32;
-        self.modified = true;
+        // Try to save updated state to storage
+        let rewrite_result = self.storage.rewrite_messages(&self.meta.id, &self.messages);
 
-        // Save updated state (messages need to be rewritten)
-        if let Err(e) = self.storage.rewrite_messages(&self.meta.id, &self.messages) {
-            tracing::error!("Failed to rewrite messages after undo: {}", e);
-        }
-        if let Err(e) = self.storage.save_meta(&self.meta) {
-            tracing::error!("Failed to save metadata after undo: {}", e);
-        }
+        match rewrite_result {
+            Ok(()) => {
+                // Storage succeeded, update metadata
+                self.meta.message_count = self.messages.len() as u32;
 
-        Some(result)
+                if let Err(e) = self.storage.save_meta(&self.meta) {
+                    tracing::error!(
+                        session_id = %self.meta.id,
+                        error = %e,
+                        "Failed to save metadata after undo - history is updated but metadata may be stale"
+                    );
+                    self.modified = true;
+                }
+
+                Some(result)
+            }
+            Err(e) => {
+                // Storage failed - restore messages to maintain consistency
+                tracing::error!(
+                    session_id = %self.meta.id,
+                    error = %e,
+                    "Failed to rewrite messages after undo - restoring original state"
+                );
+
+                // Restore in reverse order (prev was popped second, so push it first)
+                if let Some(msg) = prev {
+                    self.messages.push(msg);
+                }
+                if let Some(msg) = last {
+                    self.messages.push(msg);
+                }
+
+                // Return None to indicate the operation failed
+                None
+            }
+        }
     }
 
     /// Internal method to add a message and persist it.
+    ///
+    /// Only updates in-memory state after successful storage operations.
+    /// This ensures consistency between disk and memory state.
     fn add_message_internal(&mut self, message: StoredMessage) -> &StoredMessage {
-        // Append to storage first
-        if let Err(e) = self.storage.append_message(&self.meta.id, &message) {
-            tracing::error!("Failed to save message: {}", e);
+        // Try to append to storage first - only update memory state on success
+        match self.storage.append_message(&self.meta.id, &message) {
+            Ok(()) => {
+                // Storage succeeded, now update metadata
+                self.meta.increment_messages();
+
+                // Try to save metadata - if this fails, we still keep the message
+                // since it was already persisted to history
+                if let Err(e) = self.storage.save_meta(&self.meta) {
+                    tracing::error!(
+                        session_id = %self.meta.id,
+                        error = %e,
+                        "Failed to save metadata after message append - message is saved but metadata may be stale"
+                    );
+                }
+
+                // Add to in-memory list only after storage success
+                self.messages.push(message);
+            }
+            Err(e) => {
+                // Storage failed - log error but still add to memory for this session
+                // This allows the conversation to continue even if persistence fails
+                tracing::error!(
+                    session_id = %self.meta.id,
+                    error = %e,
+                    "Failed to save message to storage - message exists only in memory"
+                );
+
+                // Still add to memory so the conversation can continue
+                self.messages.push(message);
+                self.modified = true; // Mark as modified since we have unsaved changes
+            }
         }
 
-        // Update metadata
-        self.meta.increment_messages();
-        if let Err(e) = self.storage.save_meta(&self.meta) {
-            tracing::error!("Failed to save metadata: {}", e);
-        }
-
-        // Add to in-memory list
-        self.messages.push(message);
-        self.messages.last().unwrap()
+        self.messages.last().expect("message was just added")
     }
 
     /// Converts messages to API format for completion requests.

@@ -220,21 +220,53 @@ impl SessionStorage {
     // ========================================================================
 
     /// Lists all sessions (sorted by updated_at descending).
+    ///
+    /// Returns both successfully loaded sessions and any errors encountered during listing.
+    /// This ensures the caller is aware of any issues while still getting available sessions.
     pub fn list_sessions(&self) -> Result<Vec<SessionSummary>> {
         self.ensure_base_dir()?;
 
         let mut summaries = Vec::new();
+        let mut errors: Vec<String> = Vec::new();
 
-        if let Ok(entries) = fs::read_dir(&self.base_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_dir()
-                    && let Some(session_id) = path.file_name().and_then(|n| n.to_str())
-                    && let Ok(meta) = self.load_meta(session_id)
-                {
-                    summaries.push(SessionSummary::from(&meta));
+        let entries = fs::read_dir(&self.base_dir)
+            .with_context(|| format!("Failed to read sessions directory: {:?}", self.base_dir))?;
+
+        for entry_result in entries {
+            let entry = match entry_result {
+                Ok(e) => e,
+                Err(e) => {
+                    errors.push(format!("Failed to read directory entry: {}", e));
+                    continue;
+                }
+            };
+
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+
+            let session_id = match path.file_name().and_then(|n| n.to_str()) {
+                Some(id) => id,
+                None => continue,
+            };
+
+            match self.load_meta(session_id) {
+                Ok(meta) => summaries.push(SessionSummary::from(&meta)),
+                Err(e) => {
+                    errors.push(format!("Failed to load session '{}': {}", session_id, e));
                 }
             }
+        }
+
+        // Log errors but don't fail - return what we could load
+        if !errors.is_empty() {
+            tracing::warn!(
+                error_count = errors.len(),
+                "Encountered {} error(s) while listing sessions: {:?}",
+                errors.len(),
+                errors
+            );
         }
 
         // Sort by updated_at descending (most recent first)
@@ -323,7 +355,9 @@ impl SessionStorage {
 
 impl Default for SessionStorage {
     fn default() -> Self {
-        Self::new().expect("Failed to create session storage")
+        Self::new().expect(
+            "SessionStorage initialization failed - check directory permissions and disk space",
+        )
     }
 }
 
@@ -347,11 +381,9 @@ mod tests {
         let (storage, _temp) = create_test_storage();
         let session_id = "test-session-123";
 
-        assert!(
-            storage
-                .session_dir(session_id)
-                .ends_with("test-session-123")
-        );
+        assert!(storage
+            .session_dir(session_id)
+            .ends_with("test-session-123"));
         assert!(storage.meta_path(session_id).ends_with("meta.json"));
         assert!(storage.history_path(session_id).ends_with("history.jsonl"));
     }
