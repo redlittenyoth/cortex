@@ -68,9 +68,24 @@ impl MessageHandler {
 
     /// Validates and handles tool execution based on agent profile permissions.
     ///
-    /// If a tool is 'deny', returns an error immediately.
-    /// If 'ask', triggers a protocol 'ExecApprovalRequest' via the event sender.
-    /// Returns Ok(true) if execution should proceed, Ok(false) if waiting for approval.
+    /// This method checks the permission level for a tool call and determines
+    /// whether execution should proceed immediately, wait for user approval,
+    /// or be denied entirely.
+    ///
+    /// # Return Value Semantics
+    ///
+    /// - `Ok(true)` - The tool has 'Allow' permission; caller should proceed with execution
+    /// - `Ok(false)` - The tool has 'Ask' permission; caller should NOT proceed immediately.
+    ///   A `ToolCallPending` event has been emitted, and the session handler will convert
+    ///   this to a protocol `ExecApprovalRequest`. The caller should wait for user approval
+    ///   before retrying execution.
+    /// - `Err(_)` - The tool has 'Deny' permission; execution is forbidden for this profile
+    ///
+    /// # Errors
+    ///
+    /// Returns `CortexError::Internal` if:
+    /// - The tool is explicitly denied by the profile
+    /// - Failed to send the approval request event (for 'Ask' permission)
     pub async fn handle_tool_execution(
         &self,
         profile: &AgentProfile,
@@ -95,15 +110,29 @@ impl MessageHandler {
                 Err(CortexError::Internal(error_msg))
             }
             ToolPermission::Ask => {
-                // Trigger protocol ExecApprovalRequest by emitting ToolCallPending event
-                // This will be picked up by the session handler and converted to a protocol event
-                let _ = event_tx.send(AgentEvent::ToolCallPending {
-                    id: tool_call.id.clone(),
-                    name: tool_call.function.name.clone(),
-                    arguments: tool_call.function.arguments.clone(),
-                    risk_level: RiskLevel::Medium, // Tools marked as 'ask' are considered medium risk by default
-                });
+                // The 'Ask' permission requires user approval before execution.
+                // We emit a ToolCallPending event and return Ok(false) to indicate
+                // that the caller should NOT proceed with execution immediately.
+                // The session handler will convert this to a protocol ExecApprovalRequest
+                // and wait for user approval before retrying.
+                tracing::debug!(
+                    tool = %tool_call.function.name,
+                    id = %tool_call.id,
+                    "Tool execution requires user approval"
+                );
 
+                event_tx
+                    .send(AgentEvent::ToolCallPending {
+                        id: tool_call.id.clone(),
+                        name: tool_call.function.name.clone(),
+                        arguments: tool_call.function.arguments.clone(),
+                        risk_level: RiskLevel::Medium, // Tools marked as 'ask' are considered medium risk by default
+                    })
+                    .map_err(|e| {
+                        CortexError::Internal(format!("Failed to send approval request: {}", e))
+                    })?;
+
+                // Return false to indicate caller should wait for approval
                 Ok(false)
             }
         }
