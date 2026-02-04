@@ -280,9 +280,8 @@ fn normalize_command(cmd: &str) -> String {
         .enumerate()
         .map(|(idx, part)| {
             // Remove surrounding quotes (single and double)
-            let unquoted = part
-                .trim_matches(|c| c == '\'' || c == '"');
-            
+            let unquoted = part.trim_matches(|c| c == '\'' || c == '"');
+
             // For the first part (command), extract basename to handle path variants
             if idx == 0 {
                 Path::new(unquoted)
@@ -738,10 +737,16 @@ mod tests {
 
         // Extra whitespace should not bypass validation
         let result = validator.validate("rm  -rf  /");
-        assert!(!result.valid, "Extra whitespace should not bypass blocked command");
+        assert!(
+            !result.valid,
+            "Extra whitespace should not bypass blocked command"
+        );
 
         let result = validator.validate("rm   -rf   /");
-        assert!(!result.valid, "Multiple spaces should not bypass blocked command");
+        assert!(
+            !result.valid,
+            "Multiple spaces should not bypass blocked command"
+        );
     }
 
     #[test]
@@ -750,13 +755,22 @@ mod tests {
 
         // Quoted commands should not bypass validation
         let result = validator.validate("'rm' -rf /");
-        assert!(!result.valid, "Single quotes should not bypass blocked command");
+        assert!(
+            !result.valid,
+            "Single quotes should not bypass blocked command"
+        );
 
         let result = validator.validate("\"rm\" -rf /");
-        assert!(!result.valid, "Double quotes should not bypass blocked command");
+        assert!(
+            !result.valid,
+            "Double quotes should not bypass blocked command"
+        );
 
         let result = validator.validate("'rm' '-rf' '/'");
-        assert!(!result.valid, "Fully quoted command should not bypass blocked command");
+        assert!(
+            !result.valid,
+            "Fully quoted command should not bypass blocked command"
+        );
     }
 
     #[test]
@@ -765,13 +779,19 @@ mod tests {
 
         // Path variants should not bypass validation
         let result = validator.validate("/bin/rm -rf /");
-        assert!(!result.valid, "Absolute path should not bypass blocked command");
+        assert!(
+            !result.valid,
+            "Absolute path should not bypass blocked command"
+        );
 
         let result = validator.validate("/usr/bin/rm -rf /");
         assert!(!result.valid, "Full path should not bypass blocked command");
 
         let result = validator.validate("./rm -rf /");
-        assert!(!result.valid, "Relative path should not bypass blocked command");
+        assert!(
+            !result.valid,
+            "Relative path should not bypass blocked command"
+        );
     }
 
     #[test]
@@ -780,10 +800,16 @@ mod tests {
 
         // Combined bypass attempts
         let result = validator.validate("'/bin/rm'  -rf  /");
-        assert!(!result.valid, "Combined path and whitespace should not bypass");
+        assert!(
+            !result.valid,
+            "Combined path and whitespace should not bypass"
+        );
 
         let result = validator.validate("\"/usr/bin/rm\"   '-rf'   '/'");
-        assert!(!result.valid, "Combined quotes, path, and whitespace should not bypass");
+        assert!(
+            !result.valid,
+            "Combined quotes, path, and whitespace should not bypass"
+        );
     }
 
     #[test]
