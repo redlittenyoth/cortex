@@ -234,8 +234,6 @@ pub enum ToastPosition {
 pub struct ToastManager {
     /// Active toasts (newest first)
     toasts: Vec<Toast>,
-    /// Counter for generating unique toast IDs
-    next_id: u64,
     /// Maximum number of toasts to display at once
     max_visible: usize,
     /// Screen position for toast display
@@ -251,7 +249,6 @@ impl ToastManager {
     pub fn new() -> Self {
         Self {
             toasts: Vec::new(),
-            next_id: 1,
             max_visible: 5,
             position: ToastPosition::TopRight,
         }
@@ -275,32 +272,38 @@ impl ToastManager {
     }
 
     /// Adds a toast to the manager and returns its ID.
-    pub fn push(&mut self, mut toast: Toast) -> u64 {
-        let id = self.next_id;
-        self.next_id += 1;
-        toast.id = id;
-        self.toasts.insert(0, toast);
-        id
+    pub fn push(&mut self, toast: Toast) -> u64 {
+        // Toast notifications disabled
+        let _ = toast;
+        0
     }
 
     /// Adds a success toast and returns its ID.
     pub fn success(&mut self, message: impl Into<String>) -> u64 {
-        self.push(Toast::success(message))
+        // Toast notifications disabled
+        let _ = message;
+        0
     }
 
     /// Adds an info toast and returns its ID.
     pub fn info(&mut self, message: impl Into<String>) -> u64 {
-        self.push(Toast::info(message))
+        // Toast notifications disabled
+        let _ = message;
+        0
     }
 
     /// Adds a warning toast and returns its ID.
     pub fn warning(&mut self, message: impl Into<String>) -> u64 {
-        self.push(Toast::warning(message))
+        // Toast notifications disabled
+        let _ = message;
+        0
     }
 
     /// Adds an error toast and returns its ID.
     pub fn error(&mut self, message: impl Into<String>) -> u64 {
-        self.push(Toast::error(message))
+        // Toast notifications disabled
+        let _ = message;
+        0
     }
 
     /// Removes a specific toast by ID.
@@ -610,21 +613,26 @@ mod tests {
 
     #[test]
     fn test_toast_manager_push() {
+        // Toast notifications are disabled - verifying no-op behavior
         let mut manager = ToastManager::new();
         let id1 = manager.success("First");
         let id2 = manager.info("Second");
-        assert_eq!(manager.len(), 2);
-        assert_ne!(id1, id2);
+        assert_eq!(manager.len(), 0);
+        assert!(manager.is_empty());
+        assert_eq!(id1, 0);
+        assert_eq!(id2, 0);
     }
 
     #[test]
     fn test_toast_manager_visible_limit() {
+        // Toast notifications are disabled - verifying no-op behavior
         let mut manager = ToastManager::new().with_max_visible(2);
         manager.success("First");
         manager.info("Second");
         manager.warning("Third");
         let visible = manager.visible();
-        assert_eq!(visible.len(), 2);
+        assert_eq!(visible.len(), 0);
+        assert!(manager.is_empty());
     }
 
     #[test]
