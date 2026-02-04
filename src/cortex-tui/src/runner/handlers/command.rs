@@ -12,7 +12,7 @@ impl<'a> ActionHandler<'a> {
     /// Supported commands:
     /// - `/help` - Show help
     /// - `/clear` - Clear messages
-    /// - `/model <name>` - Switch model
+    /// - `/models <name>` - Switch model
     /// - `/quit` - Quit application
     pub(crate) async fn handle_slash_command(&mut self, cmd: &str) -> Result<bool> {
         tracing::debug!("Slash command: {}", cmd);

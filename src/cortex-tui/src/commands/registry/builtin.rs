@@ -506,21 +506,12 @@ pub fn register_builtin_commands(registry: &mut CommandRegistry) {
     // ========================================
 
     registry.register(CommandDef::new(
-        "model",
-        &["m"],
-        "Switch to a model",
-        "/model <name>",
+        "models",
+        &["m", "lm", "list-models"],
+        "List available models or switch to a model",
+        "/models [name]",
         CommandCategory::Model,
         true,
-    ));
-
-    registry.register(CommandDef::new(
-        "models",
-        &["lm", "list-models"],
-        "List available models",
-        "/models",
-        CommandCategory::Model,
-        false,
     ));
 
     registry.register(CommandDef::new(

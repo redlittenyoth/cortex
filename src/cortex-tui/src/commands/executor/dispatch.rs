@@ -84,10 +84,7 @@ impl CommandExecutor {
             "context" | "ctx" => CommandResult::Async("context".to_string()),
 
             // ============ MODEL ============
-            "model" | "m" => self.cmd_model(cmd),
-            "models" | "lm" | "list-models" => {
-                CommandResult::Async("models:fetch-and-pick".to_string())
-            }
+            "models" | "m" | "lm" | "list-models" => self.cmd_models(cmd),
             "approval" | "approve" => self.cmd_approval(cmd),
             "sandbox" | "sb" => self.cmd_sandbox(cmd),
             "auto" | "autopilot" => self.cmd_auto(cmd),

@@ -531,17 +531,17 @@ mod tests {
     #[test]
     fn test_completion_context() {
         let context = CompletionContext {
-            input: "/model claude".to_string(),
-            cursor_position: 13,
+            input: "/models claude".to_string(),
+            cursor_position: 14,
             word: Some("claude".to_string()),
-            command: Some("model".to_string()),
+            command: Some("models".to_string()),
             arg_index: Some(0),
             previous_args: vec![],
             manual_trigger: false,
             trigger_character: None,
         };
 
-        assert_eq!(context.command, Some("model".to_string()));
+        assert_eq!(context.command, Some("models".to_string()));
         assert_eq!(context.arg_index, Some(0));
     }
 }

@@ -13,7 +13,7 @@ fn get_command_shortcut(name: &str) -> Option<String> {
     match name {
         "help" => Some("[?]".to_string()),
         "settings" => Some("[Ctrl+,]".to_string()),
-        "model" => Some("[Ctrl+M]".to_string()),
+        "models" => Some("[Ctrl+M]".to_string()),
         "palette" => Some("[Ctrl+P]".to_string()),
         "quit" => Some("[Ctrl+Q]".to_string()),
         "new" => Some("[Ctrl+N]".to_string()),
@@ -420,8 +420,8 @@ mod tests {
                 category: CommandCategory::General,
             },
             PaletteItem::Command {
-                name: "model".to_string(),
-                description: "Model".to_string(),
+                name: "models".to_string(),
+                description: "Models".to_string(),
                 shortcut: None,
                 category: CommandCategory::Model,
             },
@@ -465,7 +465,7 @@ mod tests {
                 category: CommandCategory::Navigation,
             },
             PaletteItem::Command {
-                name: "model".to_string(),
+                name: "models".to_string(),
                 description: "Switch model".to_string(),
                 shortcut: None,
                 category: CommandCategory::Model,
@@ -572,7 +572,7 @@ mod tests {
             get_command_shortcut("settings"),
             Some("[Ctrl+,]".to_string())
         );
-        assert_eq!(get_command_shortcut("model"), Some("[Ctrl+M]".to_string()));
+        assert_eq!(get_command_shortcut("models"), Some("[Ctrl+M]".to_string()));
         assert_eq!(get_command_shortcut("unknown"), None);
     }
 }

@@ -111,7 +111,7 @@ Within an interactive session, you can use slash commands:
 |---------|-------------|
 | `/help` | Show available commands |
 | `/clear` | Clear the conversation |
-| `/model <name>` | Switch AI model |
+| `/models <name>` | Switch AI model |
 | `/export` | Export the session |
 | `/quit` or `/exit` | Exit Cortex |
 
@@ -182,7 +182,7 @@ cortex -m claude-3-opus
 cortex exec -m gpt-4-turbo "your prompt"
 
 # During session (slash command)
-/model claude-3-sonnet
+/models claude-3-sonnet
 ```
 
 ### Model Recommendations

@@ -129,7 +129,7 @@ impl HelpModal {
             "commands" | "slash" => vec![HelpSection::new(
                 "Slash Commands",
                 vec![
-                    HelpItem::new("/model", "Change AI model"),
+                    HelpItem::new("/models", "List or switch AI models"),
                     HelpItem::new("/mcp", "Manage MCP servers"),
                     HelpItem::new("/sessions", "View sessions"),
                     HelpItem::new("/settings", "Open settings"),
@@ -173,7 +173,7 @@ impl HelpModal {
             HelpSection::new(
                 "Slash Commands",
                 vec![
-                    HelpItem::new("/model", "Change AI model"),
+                    HelpItem::new("/models", "List or switch AI models"),
                     HelpItem::new("/mcp", "Manage MCP servers"),
                     HelpItem::new("/sessions", "View sessions"),
                     HelpItem::new("/settings", "Open settings"),

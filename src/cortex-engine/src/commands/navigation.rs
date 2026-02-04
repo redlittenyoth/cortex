@@ -39,7 +39,7 @@ Navigation & Control:
 Information:
   /skills           - List available skills
   /plugins          - List installed plugins
-  /model [name]     - Show or change current model
+  /models [name]    - Show or change current model
   /cost             - Show token usage and estimated cost
   /config           - Show configuration
 

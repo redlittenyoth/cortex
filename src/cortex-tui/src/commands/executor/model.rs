@@ -4,10 +4,10 @@ use super::CommandExecutor;
 use crate::commands::types::{CommandResult, ModalType, ParsedCommand};
 
 impl CommandExecutor {
-    pub(super) fn cmd_model(&self, cmd: &ParsedCommand) -> CommandResult {
+    pub(super) fn cmd_models(&self, cmd: &ParsedCommand) -> CommandResult {
         match cmd.first_arg() {
             Some(model) => CommandResult::SetValue("model".to_string(), model.to_string()),
-            None => CommandResult::OpenModal(ModalType::ModelPicker),
+            None => CommandResult::Async("models:fetch-and-pick".to_string()),
         }
     }
 
@@ -61,7 +61,7 @@ impl CommandExecutor {
         CommandResult::Message(
             "Warning: The /provider command is deprecated.\n\n\
              Cortex is now a unified platform - all model access goes through the Cortex backend.\n\
-             Use /model to switch between available models instead."
+             Use /models to switch between available models instead."
                 .to_string(),
         )
     }

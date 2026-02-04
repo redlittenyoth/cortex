@@ -10,7 +10,7 @@
 //!
 //! Commands are entered with a leading `/` character:
 //! - `/help` - Show help
-//! - `/model claude-sonnet-4-20250514` - Switch model
+//! - `/models claude-sonnet-4-20250514` - Switch model
 //! - `/search "hello world"` - Search with quoted argument
 //!
 //! # Example

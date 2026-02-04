@@ -326,8 +326,8 @@ mod tests {
         assert_eq!(inv.name, "help");
         assert!(inv.args.is_empty());
 
-        let inv = CommandInvocation::parse("/model gpt-4").unwrap();
-        assert_eq!(inv.name, "model");
+        let inv = CommandInvocation::parse("/models gpt-4").unwrap();
+        assert_eq!(inv.name, "models");
         assert_eq!(inv.arg(0), Some("gpt-4"));
 
         let inv = CommandInvocation::parse("/config --edit").unwrap();
