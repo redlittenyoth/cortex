@@ -120,12 +120,10 @@ impl SessionStorage {
 
         // Sync parent directory on Unix for crash safety (ensures directory entry is persisted)
         #[cfg(unix)]
+        if let Some(parent) = path.parent()
+            && let Ok(dir) = File::open(parent)
         {
-            if let Some(parent) = path.parent() {
-                if let Ok(dir) = File::open(parent) {
-                    let _ = dir.sync_all();
-                }
-            }
+            let _ = dir.sync_all();
         }
 
         Ok(())
@@ -241,12 +239,10 @@ impl SessionStorage {
 
         // Sync parent directory on Unix for crash safety (ensures directory entry is persisted)
         #[cfg(unix)]
+        if let Some(parent) = path.parent()
+            && let Ok(dir) = File::open(parent)
         {
-            if let Some(parent) = path.parent() {
-                if let Ok(dir) = File::open(parent) {
-                    let _ = dir.sync_all();
-                }
-            }
+            let _ = dir.sync_all();
         }
 
         Ok(())
