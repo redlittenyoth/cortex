@@ -43,7 +43,10 @@ mod tests {
     #[test]
     fn test_help_browser_state_with_topic() {
         let state = HelpBrowserState::new().with_topic(Some("keyboard"));
-        assert_eq!(state.current_section().expect("should have section").id, "keyboard");
+        assert_eq!(
+            state.current_section().expect("should have section").id,
+            "keyboard"
+        );
     }
 
     #[test]
@@ -220,10 +223,16 @@ mod tests {
     #[test]
     fn test_current_section() {
         let mut state = HelpBrowserState::new();
-        assert_eq!(state.current_section().expect("should have section").id, "getting-started");
+        assert_eq!(
+            state.current_section().expect("should have section").id,
+            "getting-started"
+        );
 
         state.select_next();
-        assert_eq!(state.current_section().expect("should have section").id, "keyboard");
+        assert_eq!(
+            state.current_section().expect("should have section").id,
+            "keyboard"
+        );
     }
 
     #[test]
