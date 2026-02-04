@@ -27,8 +27,24 @@ use cortex_protocol::ConversationId;
 
 use crate::output::{OutputFormat, OutputWriter};
 
+// ============================================================================
+// CONFIGURATION CONSTANTS
+// ============================================================================
+
 /// Maximum retries for transient errors.
 const MAX_RETRIES: usize = 3;
+
+/// Default maximum number of conversation turns before stopping.
+const DEFAULT_MAX_TURNS: usize = 10;
+
+/// Default temperature for LLM responses (0.0 = deterministic, 1.0 = creative).
+const DEFAULT_TEMPERATURE: f32 = 0.7;
+
+/// Default maximum output tokens for LLM responses.
+const DEFAULT_MAX_OUTPUT_TOKENS: u32 = 4096;
+
+/// Base delay between retry attempts in milliseconds (used for exponential backoff).
+const RETRY_DELAY_BASE_MS: u64 = 500;
 
 /// Options for headless execution.
 #[derive(Debug, Clone)]
@@ -69,7 +85,7 @@ impl Default for ExecOptions {
             model: None,
             output_format: OutputFormat::Text,
             full_auto: false,
-            max_turns: Some(10),
+            max_turns: Some(DEFAULT_MAX_TURNS),
             timeout_secs: Some(DEFAULT_EXEC_TIMEOUT_SECS),
             request_timeout_secs: Some(DEFAULT_REQUEST_TIMEOUT_SECS),
             sandbox: true,
@@ -334,7 +350,7 @@ impl ExecRunner {
 
         // Get tool definitions
         let tools = self.get_tool_definitions();
-        let max_turns = self.options.max_turns.unwrap_or(10);
+        let max_turns = self.options.max_turns.unwrap_or(DEFAULT_MAX_TURNS);
 
         // Main execution loop
         while turns < max_turns {
@@ -474,8 +490,8 @@ impl ExecRunner {
         let request = CompletionRequest {
             messages: conversation.messages().to_vec(),
             model: client.model().to_string(),
-            max_tokens: Some(4096),
-            temperature: Some(0.7),
+            max_tokens: Some(DEFAULT_MAX_OUTPUT_TOKENS),
+            temperature: Some(DEFAULT_TEMPERATURE),
             seed: None,
             tools: tools.to_vec(),
             stream: self.options.streaming,
@@ -497,7 +513,7 @@ impl ExecRunner {
                     MAX_RETRIES
                 ));
                 // Exponential backoff
-                tokio::time::sleep(Duration::from_millis(500 * 2u64.pow(attempt as u32))).await;
+                tokio::time::sleep(Duration::from_millis(RETRY_DELAY_BASE_MS * 2u64.pow(attempt as u32))).await;
             }
 
             let result = tokio::time::timeout(request_timeout, async {
@@ -760,7 +776,7 @@ mod tests {
 
         assert!(opts.prompt.is_empty());
         assert!(opts.sandbox);
-        assert_eq!(opts.max_turns, Some(10));
+        assert_eq!(opts.max_turns, Some(DEFAULT_MAX_TURNS));
         assert_eq!(opts.timeout_secs, Some(DEFAULT_EXEC_TIMEOUT_SECS));
         assert!(!opts.full_auto);
         assert!(opts.streaming);
