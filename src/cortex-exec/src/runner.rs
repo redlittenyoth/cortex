@@ -27,9 +27,17 @@ use cortex_protocol::ConversationId;
 use crate::output::{OutputFormat, OutputWriter};
 
 /// Default timeout for the entire execution (10 minutes).
+///
+/// This is the maximum duration for a multi-turn exec session.
+/// See `cortex_common::http_client` module documentation for the complete
+/// timeout hierarchy across Cortex services.
 const DEFAULT_TIMEOUT_SECS: u64 = 600;
 
 /// Default timeout for a single LLM request (2 minutes).
+///
+/// Allows sufficient time for model inference while preventing indefinite hangs.
+/// See `cortex_common::http_client` module documentation for the complete
+/// timeout hierarchy across Cortex services.
 const DEFAULT_REQUEST_TIMEOUT_SECS: u64 = 120;
 
 /// Maximum retries for transient errors.
@@ -187,7 +195,10 @@ impl ExecRunner {
             self.client = Some(client);
         }
 
-        Ok(self.client.as_ref().unwrap().as_ref())
+        self.client
+            .as_ref()
+            .map(|c| c.as_ref())
+            .ok_or_else(|| CortexError::Internal("LLM client not initialized".to_string()))
     }
 
     /// Get filtered tool definitions based on options.
