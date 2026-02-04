@@ -1,6 +1,6 @@
 //! OpenTelemetry configuration.
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 /// OpenTelemetry settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,12 +30,26 @@ pub struct OtelSettings {
     pub propagate_context: bool,
 
     /// Sampling ratio (0.0 to 1.0).
-    #[serde(default = "default_sampling_ratio")]
+    #[serde(default = "default_sampling_ratio", deserialize_with = "deserialize_sampling_ratio")]
     pub sampling_ratio: f64,
 
     /// Export timeout in seconds.
     #[serde(default = "default_export_timeout")]
     pub export_timeout_secs: u64,
+}
+
+/// Deserialize sampling_ratio with validation (must be 0.0-1.0).
+fn deserialize_sampling_ratio<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = f64::deserialize(deserializer)?;
+    if !(0.0..=1.0).contains(&value) {
+        return Err(serde::de::Error::custom(
+            "sampling_ratio must be between 0.0 and 1.0",
+        ));
+    }
+    Ok(value)
 }
 
 impl Default for OtelSettings {
@@ -84,7 +98,8 @@ impl OtelSettings {
         }
 
         if let Ok(ratio) = std::env::var("OTEL_TRACES_SAMPLER_ARG")
-            && let Ok(ratio) = ratio.parse()
+            && let Ok(ratio) = ratio.parse::<f64>()
+            && (0.0..=1.0).contains(&ratio)
         {
             settings.sampling_ratio = ratio;
         }

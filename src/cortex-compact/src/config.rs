@@ -1,6 +1,6 @@
 //! Compaction configuration.
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 /// Configuration for auto-compaction.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -8,8 +8,8 @@ pub struct CompactionConfig {
     /// Whether auto-compaction is enabled.
     #[serde(default = "default_true")]
     pub enabled: bool,
-    /// Token threshold to trigger compaction (percentage of max).
-    #[serde(default = "default_threshold")]
+    /// Token threshold to trigger compaction (ratio 0.0-1.0 of max context).
+    #[serde(default = "default_threshold", deserialize_with = "deserialize_threshold_percent")]
     pub threshold_percent: f32,
     /// Minimum tokens to keep after compaction.
     #[serde(default = "default_min_tokens")]
@@ -23,6 +23,20 @@ pub struct CompactionConfig {
     /// Whether to preserve recent turns.
     #[serde(default = "default_preserve_recent")]
     pub preserve_recent_turns: usize,
+}
+
+/// Deserialize threshold_percent with validation (must be 0.0-1.0).
+fn deserialize_threshold_percent<'de, D>(deserializer: D) -> Result<f32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = f32::deserialize(deserializer)?;
+    if !(0.0..=1.0).contains(&value) {
+        return Err(serde::de::Error::custom(
+            "threshold_percent must be between 0.0 and 1.0",
+        ));
+    }
+    Ok(value)
 }
 
 fn default_true() -> bool {

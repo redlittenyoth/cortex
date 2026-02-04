@@ -40,7 +40,7 @@ pub struct SessionConfiguredEvent {
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct TaskStartedEvent {
-    pub model_context_window: Option<i64>,
+    pub model_context_window: Option<u64>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]

@@ -46,9 +46,9 @@ pub struct Config {
     /// Provider configuration.
     pub model_provider: ModelProviderInfo,
     /// Context window size.
-    pub model_context_window: Option<i64>,
+    pub model_context_window: Option<u64>,
     /// Auto-compact token limit.
-    pub model_auto_compact_token_limit: Option<i64>,
+    pub model_auto_compact_token_limit: Option<u64>,
     /// Approval policy.
     pub approval_policy: AskForApproval,
     /// Sandbox policy.

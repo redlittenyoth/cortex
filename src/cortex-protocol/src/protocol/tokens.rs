@@ -18,7 +18,7 @@ pub struct TokenUsage {
 pub struct TokenUsageInfo {
     pub total_token_usage: TokenUsage,
     pub last_token_usage: TokenUsage,
-    pub model_context_window: Option<i64>,
+    pub model_context_window: Option<u64>,
     #[serde(default)]
     pub context_tokens: i64,
 }
