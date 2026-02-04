@@ -588,6 +588,11 @@ impl EventLoop {
                 self.app_state.model = value.to_string();
                 self.update_session_model(value);
                 self.add_system_message(&format!("Model set to: {}", value));
+
+                // Persist model selection to config
+                if let Ok(mut config) = crate::providers::config::CortexConfig::load() {
+                    let _ = config.save_last_model(&self.app_state.provider, value);
+                }
             }
             "provider" => {
                 // Check validation result first, storing any error and new model

@@ -245,9 +245,9 @@ impl FormRegistry {
                 ],
             )),
 
-            "model" => Some(FormState::new(
+            "models" => Some(FormState::new(
                 "Set Model",
-                "model",
+                "models",
                 vec![
                     FormField::text("model", "Model Name")
                         .required()
@@ -434,7 +434,7 @@ impl FormRegistry {
             "sandbox",
             "auto",
             "provider",
-            "model",
+            "models",
             "theme",
             // MCP commands
             "mcp",
@@ -497,7 +497,7 @@ mod tests {
         assert!(registry.has_form("sandbox"));
         assert!(registry.has_form("auto"));
         assert!(registry.has_form("provider"));
-        assert!(registry.has_form("model"));
+        assert!(registry.has_form("models"));
         assert!(registry.has_form("theme"));
     }
 

@@ -13,7 +13,7 @@
 //! - /compact - Compact conversation context
 //! - /undo - Undo last action
 //! - /config - Show/edit configuration
-//! - /model - Change model
+//! - /models - List or switch models
 //! - /cost - Show token usage and cost
 
 mod configuration;

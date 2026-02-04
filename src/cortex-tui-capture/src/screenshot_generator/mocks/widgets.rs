@@ -38,8 +38,7 @@ fn mock_autocomplete_commands() -> String {
 ╭─────────────────────────────────────────────────────────────────────────────╮
 │ ┌─ Commands ──────────────────────────────────────────────────────┐         │
 │ │ > /help      - Show help information                            │         │
-│ │   /model     - Switch to a model                                │         │
-│ │   /models    - List available models                            │         │
+│ │   /models    - List available models or switch to a model       │         │
 │ │   /new       - Start a new session                              │         │
 │ │   /clear     - Clear current conversation                       │         │
 │ │   /session   - Show current session info                        │         │
@@ -57,14 +56,13 @@ fn mock_autocomplete_filtered() -> String {
     r#"
 ╭─────────────────────────────────────────────────────────────────────────────╮
 │ ┌─ Commands ──────────────────────────────────────────────────────┐         │
-│ │ > /model     - Switch to a model                                │         │
-│ │   /models    - List available models                            │         │
+│ │ > /models    - List available models or switch to a model       │         │
 │ └─────────────────────────────────────────────────────────────────┘         │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ > /mod_                                                                     │
 ╰─────────────────────────────────────────────────────────────────────────────╯
 
-Filtering: "mod" matches 2 commands
+Filtering: "mod" matches 1 command
 "#
     .to_string()
 }
@@ -93,8 +91,7 @@ fn mock_autocomplete_scroll() -> String {
 ╭─────────────────────────────────────────────────────────────────────────────╮
 │ ┌─ Commands ──────────────────────────────────────────────────────┐         │
 │ │ > /help      - Show help information                           │█│       │
-│ │   /model     - Switch to a model                               │ │       │
-│ │   /models    - List available models                           │ │       │
+│ │   /models    - List available models or switch to a model      │ │       │
 │ │   /new       - Start a new session                             │ │       │
 │ │   /clear     - Clear current conversation                      │ │       │
 │ │   /session   - Show current session info                       │ │       │
@@ -114,8 +111,7 @@ fn mock_autocomplete_selected() -> String {
 ╭─────────────────────────────────────────────────────────────────────────────╮
 │ ┌─ Commands ──────────────────────────────────────────────────────┐         │
 │ │   /help      - Show help information                            │         │
-│ │   /model     - Switch to a model                                │         │
-│ │ █ /models    - List available models                 [SELECTED] │         │
+│ │ █ /models    - List available models or switch       [SELECTED] │         │
 │ │   /new       - Start a new session                              │         │
 │ │   /clear     - Clear current conversation                       │         │
 │ └─────────────────────────────────────────────────────────────────┘         │
@@ -162,14 +158,14 @@ fn mock_command_palette() -> String {
 │                  │  > _                                  │                  │
 │                  │                                       │                  │
 │                  │  Recent:                              │                  │
-│                  │    /model gpt-4                       │                  │
+│                  │    /models gpt-4                      │                  │
 │                  │    /clear                             │                  │
 │                  │    /help commands                     │                  │
 │                  │                                       │                  │
 │                  │  All Commands:                        │                  │
 │                  │    /help       Show help              │                  │
 │                  │    /new        New session            │                  │
-│                  │    /model      Switch model           │                  │
+│                  │    /models     Switch model           │                  │
 │                  │    /export     Export session         │                  │
 │                  │    ...                                │                  │
 │                  │                                       │                  │

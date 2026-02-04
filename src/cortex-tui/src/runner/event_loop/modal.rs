@@ -168,7 +168,7 @@ impl EventLoop {
             "model" => {
                 let name = get("model");
                 if !name.is_empty() {
-                    format!("/model {}", name)
+                    format!("/models {}", name)
                 } else {
                     return;
                 }
@@ -538,6 +538,10 @@ impl EventLoop {
                         return false;
                     }
                     self.app_state.model = item_id.clone();
+                }
+                // Persist model selection to config
+                if let Ok(mut config) = crate::providers::config::CortexConfig::load() {
+                    let _ = config.save_last_model(&self.app_state.provider, &item_id);
                 }
                 self.update_session_model(&item_id);
                 return false;

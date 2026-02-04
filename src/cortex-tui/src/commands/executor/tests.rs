@@ -76,24 +76,24 @@ fn test_execute_str_invalid() {
 }
 
 #[test]
-fn test_model_with_arg() {
+fn test_models_with_arg() {
     let executor = CommandExecutor::new();
-    let result = executor.execute_str("/model gpt-4");
+    let result = executor.execute_str("/models gpt-4");
     if let CommandResult::SetValue(key, value) = result {
         assert_eq!(key, "model");
         assert_eq!(value, "gpt-4");
     } else {
-        panic!("Expected SetValue");
+        panic!("Expected SetValue, got {:?}", result);
     }
 }
 
 #[test]
-fn test_model_without_arg() {
+fn test_models_without_arg() {
     let executor = CommandExecutor::new();
-    let result = executor.execute_str("/model");
+    let result = executor.execute_str("/models");
     assert!(matches!(
         result,
-        CommandResult::OpenModal(ModalType::ModelPicker)
+        CommandResult::Async(ref s) if s == "models:fetch-and-pick"
     ));
 }
 

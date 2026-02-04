@@ -87,8 +87,7 @@ fn mock_input_command() -> String {
 │ > /mod_                                                                     │
 │                                                                             │
 │   ┌─ Commands ──────────────────────────────────────────────────────────┐   │
-│   │ > /model     - Switch to a model                                    │   │
-│   │   /models    - List available models                                │   │
+│   │ > /models    - List available models or switch to a model           │   │
 │   └─────────────────────────────────────────────────────────────────────┘   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ Tab to complete · Enter to select                                           │

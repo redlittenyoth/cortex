@@ -207,20 +207,15 @@ pub fn get_help_sections() -> Vec<HelpSection> {
             HelpContent::Separator,
             HelpContent::Title("Model Commands".to_string()),
             HelpContent::Command {
-                name: "/model".to_string(),
-                description: "Switch model".to_string(),
-                usage: "/model <name>".to_string(),
-            },
-            HelpContent::Command {
                 name: "/models".to_string(),
-                description: "List models".to_string(),
-                usage: "/models".to_string(),
+                description: "List available models or switch model".to_string(),
+                usage: "/models [name]".to_string(),
             },
         ]),
         HelpSection::new("models", "Models").with_content(vec![
             HelpContent::Title("Available Models".to_string()),
             HelpContent::Paragraph(
-                "Use /models to see available models or /model <name> to switch.".to_string(),
+                "Use /models to see available models or /models <name> to switch.".to_string(),
             ),
             HelpContent::Separator,
             HelpContent::Title("Anthropic".to_string()),
@@ -303,7 +298,7 @@ pub fn get_help_sections() -> Vec<HelpSection> {
             HelpContent::Separator,
             HelpContent::Title("How do I switch models?".to_string()),
             HelpContent::Paragraph(
-                "Use /model <name> or press Ctrl+M to open the model picker.".to_string(),
+                "Use /models <name> or press Ctrl+M to open the model picker.".to_string(),
             ),
             HelpContent::Separator,
             HelpContent::Title("How do I save my session?".to_string()),
