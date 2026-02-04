@@ -49,6 +49,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn test_timeout_values_are_reasonable() {
         // Exec timeout should be greater than request timeout
         assert!(DEFAULT_EXEC_TIMEOUT_SECS > DEFAULT_REQUEST_TIMEOUT_SECS);
