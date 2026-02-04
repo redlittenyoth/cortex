@@ -375,7 +375,7 @@ mod tests {
         let text = "こんにちは";
         assert_eq!(safe_slice_up_to(text, 3), "こ"); // Valid boundary
         assert_eq!(safe_slice_up_to(text, 6), "こん"); // Valid boundary
-        // Position 4 is inside the second character, should return "こ"
+                                                       // Position 4 is inside the second character, should return "こ"
         assert_eq!(safe_slice_up_to(text, 4), "こ");
         assert_eq!(safe_slice_up_to(text, 5), "こ");
     }
@@ -384,7 +384,7 @@ mod tests {
     fn test_safe_slice_from_multibyte() {
         let text = "こんにちは";
         assert_eq!(safe_slice_from(text, 3), "んにちは"); // Valid boundary
-        // Position 4 is inside second character, should skip to position 6
+                                                          // Position 4 is inside second character, should skip to position 6
         assert_eq!(safe_slice_from(text, 4), "にちは");
         assert_eq!(safe_slice_from(text, 5), "にちは");
     }

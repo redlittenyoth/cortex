@@ -415,7 +415,10 @@ impl<K: std::hash::Hash + Eq + Clone, V: Clone> AsyncCache<K, V> {
 /// Run futures concurrently with limit.
 ///
 /// Returns an error if the semaphore is closed unexpectedly.
-pub async fn concurrent<F, Fut, T>(items: impl IntoIterator<Item = F>, limit: usize) -> Result<Vec<T>>
+pub async fn concurrent<F, Fut, T>(
+    items: impl IntoIterator<Item = F>,
+    limit: usize,
+) -> Result<Vec<T>>
 where
     F: FnOnce() -> Fut,
     Fut: Future<Output = T>,

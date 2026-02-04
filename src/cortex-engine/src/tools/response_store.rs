@@ -12,7 +12,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use tokio::sync::RwLock;
-use tracing::{debug, warn};
+use tracing::debug;
 
 use crate::tools::spec::ToolResult;
 
@@ -145,7 +145,12 @@ impl ToolResponseStore {
     ///
     /// If the store is at capacity, the oldest entry will be evicted.
     /// Returns `true` if an entry was evicted to make room.
-    pub async fn store(&self, call_id: impl Into<String>, tool_name: impl Into<String>, result: ToolResult) -> bool {
+    pub async fn store(
+        &self,
+        call_id: impl Into<String>,
+        tool_name: impl Into<String>,
+        result: ToolResult,
+    ) -> bool {
         let call_id = call_id.into();
         let tool_name = tool_name.into();
         let mut evicted = false;
@@ -185,7 +190,7 @@ impl ToolResponseStore {
     /// Marks the response as read but does not consume it.
     pub async fn get(&self, call_id: &str) -> Option<ToolResult> {
         let mut responses = self.responses.write().await;
-        
+
         if let Some(response) = responses.get_mut(call_id) {
             response.read = true;
             let mut stats = self.stats.write().await;
@@ -202,7 +207,7 @@ impl ToolResponseStore {
     /// entries are cleaned up after being consumed (#5293).
     pub async fn take(&self, call_id: &str) -> Option<ToolResult> {
         let mut responses = self.responses.write().await;
-        
+
         if let Some(response) = responses.remove(call_id) {
             let mut stats = self.stats.write().await;
             stats.takes += 1;
@@ -234,16 +239,16 @@ impl ToolResponseStore {
         let mut responses = self.responses.write().await;
         let ttl = self.config.ttl;
         let before = responses.len();
-        
+
         responses.retain(|_, v| !v.is_expired(ttl));
-        
+
         let removed = before - responses.len();
         if removed > 0 {
             debug!(removed, "Cleaned up expired responses");
             let mut stats = self.stats.write().await;
             stats.expired_cleanups += removed as u64;
         }
-        
+
         removed
     }
 
@@ -253,14 +258,14 @@ impl ToolResponseStore {
     pub async fn cleanup_read(&self) -> usize {
         let mut responses = self.responses.write().await;
         let before = responses.len();
-        
+
         responses.retain(|_, v| !v.read);
-        
+
         let removed = before - responses.len();
         if removed > 0 {
             debug!(removed, "Cleaned up read-but-not-consumed responses");
         }
-        
+
         removed
     }
 
@@ -278,7 +283,7 @@ impl ToolResponseStore {
     pub async fn info(&self) -> StoreInfo {
         let responses = self.responses.read().await;
         let stats = self.stats.read().await;
-        
+
         StoreInfo {
             current_size: responses.len(),
             max_size: self.config.max_size,
@@ -411,14 +416,22 @@ mod tests {
         let store = ToolResponseStore::with_config(config);
 
         // Fill to capacity
-        store.store("call-1", "Read", ToolResult::success("1")).await;
-        store.store("call-2", "Read", ToolResult::success("2")).await;
-        store.store("call-3", "Read", ToolResult::success("3")).await;
+        store
+            .store("call-1", "Read", ToolResult::success("1"))
+            .await;
+        store
+            .store("call-2", "Read", ToolResult::success("2"))
+            .await;
+        store
+            .store("call-3", "Read", ToolResult::success("3"))
+            .await;
 
         assert_eq!(store.len().await, 3);
 
         // Add one more, should evict oldest
-        let evicted = store.store("call-4", "Read", ToolResult::success("4")).await;
+        let evicted = store
+            .store("call-4", "Read", ToolResult::success("4"))
+            .await;
         assert!(evicted);
         assert_eq!(store.len().await, 3);
 
@@ -429,11 +442,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_expired_cleanup() {
-        let config = ToolResponseStoreConfig::default()
-            .with_ttl(Duration::from_millis(50));
+        let config = ToolResponseStoreConfig::default().with_ttl(Duration::from_millis(50));
         let store = ToolResponseStore::with_config(config);
 
-        store.store("call-1", "Read", ToolResult::success("1")).await;
+        store
+            .store("call-1", "Read", ToolResult::success("1"))
+            .await;
         assert_eq!(store.len().await, 1);
 
         // Wait for expiration
@@ -448,8 +462,12 @@ mod tests {
     async fn test_cleanup_read() {
         let store = ToolResponseStore::new();
 
-        store.store("call-1", "Read", ToolResult::success("1")).await;
-        store.store("call-2", "Read", ToolResult::success("2")).await;
+        store
+            .store("call-1", "Read", ToolResult::success("1"))
+            .await;
+        store
+            .store("call-2", "Read", ToolResult::success("2"))
+            .await;
 
         // Read one entry
         store.get("call-1").await;
@@ -466,7 +484,9 @@ mod tests {
     async fn test_stats() {
         let store = ToolResponseStore::new();
 
-        store.store("call-1", "Read", ToolResult::success("1")).await;
+        store
+            .store("call-1", "Read", ToolResult::success("1"))
+            .await;
         store.get("call-1").await;
         store.take("call-1").await;
 
@@ -489,8 +509,12 @@ mod tests {
     async fn test_clear() {
         let store = ToolResponseStore::new();
 
-        store.store("call-1", "Read", ToolResult::success("1")).await;
-        store.store("call-2", "Read", ToolResult::success("2")).await;
+        store
+            .store("call-1", "Read", ToolResult::success("1"))
+            .await;
+        store
+            .store("call-2", "Read", ToolResult::success("2"))
+            .await;
 
         assert_eq!(store.len().await, 2);
 
@@ -502,7 +526,9 @@ mod tests {
     async fn test_info() {
         let store = ToolResponseStore::new();
 
-        store.store("call-1", "Read", ToolResult::success("1")).await;
+        store
+            .store("call-1", "Read", ToolResult::success("1"))
+            .await;
 
         let info = store.info().await;
         assert_eq!(info.current_size, 1);
