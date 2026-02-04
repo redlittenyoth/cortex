@@ -7,7 +7,6 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
-use cortex_common::DEFAULT_BATCH_TIMEOUT_SECS;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -20,6 +19,10 @@ use crate::tools::spec::{ToolDefinition, ToolHandler, ToolResult};
 
 /// Maximum number of tools that can be executed in a batch.
 pub const MAX_BATCH_SIZE: usize = 10;
+
+/// Default timeout for individual tool execution in seconds.
+/// This prevents a single tool from consuming the entire batch timeout.
+pub const DEFAULT_TOOL_TIMEOUT_SECS: u64 = 60;
 
 /// Tools that cannot be called within a batch (prevent recursion).
 /// Note: Task is now allowed to enable parallel task execution.
@@ -43,6 +46,10 @@ pub struct BatchToolArgs {
     /// Optional timeout in seconds for the entire batch (default: 300s).
     #[serde(default)]
     pub timeout_secs: Option<u64>,
+    /// Optional timeout in seconds for individual tools (default: 60s).
+    /// This prevents a single tool from consuming the entire batch timeout.
+    #[serde(default)]
+    pub tool_timeout_secs: Option<u64>,
 }
 
 /// Result of a single tool call within the batch.
@@ -156,7 +163,7 @@ impl BatchToolHandler {
         &self,
         calls: Vec<BatchToolCall>,
         context: &ToolContext,
-        timeout_duration: Duration,
+        tool_timeout: Duration,
     ) -> BatchResult {
         let start_time = Instant::now();
         let results = Arc::new(Mutex::new(Vec::with_capacity(calls.len())));
@@ -174,9 +181,9 @@ impl BatchToolHandler {
                 async move {
                     let call_start = Instant::now();
 
-                    // Execute with per-call timeout (use batch timeout for each call)
+                    // Execute with per-tool timeout to prevent single tools from blocking others
                     let execution_result = timeout(
-                        timeout_duration,
+                        tool_timeout,
                         executor.execute_tool(&call.tool, call.arguments, &ctx),
                     )
                     .await;
@@ -200,7 +207,7 @@ impl BatchToolHandler {
                             duration_ms,
                         },
                         Ok(Err(e)) => BatchCallResult {
-                            tool: tool_name,
+                            tool: tool_name.clone(),
                             index,
                             success: false,
                             result: None,
@@ -208,11 +215,15 @@ impl BatchToolHandler {
                             duration_ms,
                         },
                         Err(_) => BatchCallResult {
-                            tool: tool_name,
+                            tool: tool_name.clone(),
                             index,
                             success: false,
                             result: None,
-                            error: Some(format!("Timeout after {}s", timeout_duration.as_secs())),
+                            error: Some(format!(
+                                "Tool '{}' timed out after {}s",
+                                tool_name,
+                                tool_timeout.as_secs()
+                            )),
                             duration_ms,
                         },
                     };
@@ -326,13 +337,13 @@ impl ToolHandler for BatchToolHandler {
         // Validate calls
         self.validate_calls(&args.calls)?;
 
-        // Determine timeout
-        let timeout_secs = args.timeout_secs.unwrap_or(DEFAULT_BATCH_TIMEOUT_SECS);
-        let timeout_duration = Duration::from_secs(timeout_secs);
+        // Determine per-tool timeout (prevents single tool from blocking others)
+        let tool_timeout_secs = args.tool_timeout_secs.unwrap_or(DEFAULT_TOOL_TIMEOUT_SECS);
+        let tool_timeout = Duration::from_secs(tool_timeout_secs);
 
         // Execute all tools in parallel
         let batch_result = self
-            .execute_parallel(args.calls, context, timeout_duration)
+            .execute_parallel(args.calls, context, tool_timeout)
             .await;
 
         // Format output
@@ -382,6 +393,12 @@ pub fn batch_tool_definition() -> ToolDefinition {
                     "description": "Optional timeout in seconds for the entire batch execution (default: 300)",
                     "minimum": 1,
                     "maximum": 600
+                },
+                "tool_timeout_secs": {
+                    "type": "integer",
+                    "description": "Optional timeout in seconds for individual tool execution (default: 60). Prevents a single tool from consuming the entire batch timeout.",
+                    "minimum": 1,
+                    "maximum": 300
                 }
             }
         }),
@@ -407,6 +424,7 @@ pub async fn execute_batch(
             })
             .collect(),
         timeout_secs: None,
+        tool_timeout_secs: None,
     };
 
     let arguments = serde_json::to_value(args)
