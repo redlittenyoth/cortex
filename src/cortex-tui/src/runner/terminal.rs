@@ -854,25 +854,71 @@ pub fn is_clipboard_available() -> bool {
 ///
 /// Returns `true` if the text was successfully copied, `false` otherwise.
 /// Failures are logged as warnings but don't cause errors.
+///
+/// # Non-blocking behavior
+///
+/// On Linux, clipboard operations can block indefinitely when no clipboard manager
+/// is available (e.g., SSH sessions without X11/Wayland forwarding). To prevent
+/// blocking the async event loop, the Linux implementation spawns a separate thread
+/// for the blocking `.wait()` call with a timeout of 2 seconds.
 pub fn safe_clipboard_copy(text: &str) -> bool {
-    match arboard::Clipboard::new() {
-        Ok(mut clipboard) => {
-            #[cfg(target_os = "linux")]
-            {
-                use arboard::SetExtLinux;
-                // On Linux, use wait() to ensure the clipboard manager receives the data
-                // before the Clipboard object is dropped. This is critical because X11/Wayland
-                // clipboards require the source application to remain available.
-                match clipboard.set().wait().text(text) {
-                    Ok(_) => true,
-                    Err(e) => {
-                        tracing::warn!("Clipboard copy failed: {}", e);
-                        false
+    #[cfg(target_os = "linux")]
+    {
+        // On Linux, clipboard operations with wait() can block indefinitely if no
+        // clipboard manager is available (e.g., SSH sessions without X11 forwarding).
+        // To prevent blocking the async event loop, we spawn a separate thread with
+        // a timeout.
+        use std::sync::mpsc;
+        use std::time::Duration;
+
+        let text = text.to_string();
+        let (tx, rx) = mpsc::channel();
+
+        std::thread::spawn(move || {
+            let result = match arboard::Clipboard::new() {
+                Ok(mut clipboard) => {
+                    use arboard::SetExtLinux;
+                    // wait() is necessary on Linux to ensure the clipboard manager
+                    // receives the data before the Clipboard object is dropped
+                    match clipboard.set().wait().text(&text) {
+                        Ok(_) => true,
+                        Err(e) => {
+                            tracing::warn!("Clipboard copy failed: {}", e);
+                            false
+                        }
                     }
                 }
+                Err(e) => {
+                    tracing::debug!("Clipboard unavailable: {}", e);
+                    false
+                }
+            };
+            // Ignore send error - the receiver may have timed out
+            let _ = tx.send(result);
+        });
+
+        // Wait for the clipboard operation with a 2 second timeout
+        // This prevents indefinite blocking when no clipboard manager is available
+        match rx.recv_timeout(Duration::from_secs(2)) {
+            Ok(result) => result,
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                tracing::warn!(
+                    "Clipboard copy timed out - no clipboard manager available? \
+                     (X11/Wayland forwarding may not be configured)"
+                );
+                false
             }
-            #[cfg(target_os = "windows")]
-            {
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                tracing::warn!("Clipboard thread terminated unexpectedly");
+                false
+            }
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        match arboard::Clipboard::new() {
+            Ok(mut clipboard) => {
                 // On Windows, clipboard content persists after the Clipboard object is dropped,
                 // but we need to ensure the set operation completes successfully.
                 // Small delay helps ensure clipboard is fully populated before returning.
@@ -888,20 +934,27 @@ pub fn safe_clipboard_copy(text: &str) -> bool {
                     }
                 }
             }
-            #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-            {
-                match clipboard.set_text(text) {
-                    Ok(_) => true,
-                    Err(e) => {
-                        tracing::warn!("Clipboard copy failed: {}", e);
-                        false
-                    }
-                }
+            Err(e) => {
+                tracing::debug!("Clipboard unavailable: {}", e);
+                false
             }
         }
-        Err(e) => {
-            tracing::debug!("Clipboard unavailable: {}", e);
-            false
+    }
+
+    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
+    {
+        match arboard::Clipboard::new() {
+            Ok(mut clipboard) => match clipboard.set_text(text) {
+                Ok(_) => true,
+                Err(e) => {
+                    tracing::warn!("Clipboard copy failed: {}", e);
+                    false
+                }
+            },
+            Err(e) => {
+                tracing::debug!("Clipboard unavailable: {}", e);
+                false
+            }
         }
     }
 }
