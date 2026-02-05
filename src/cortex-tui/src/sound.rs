@@ -53,6 +53,22 @@ const APPROVAL_WAV: &[u8] = include_bytes!("sounds/approval.wav");
 /// hardware is available (e.g., "ALSA lib confmisc.c: cannot find card 0").
 /// This function suppresses those messages by temporarily redirecting stderr
 /// to /dev/null during initialization.
+///
+/// # Thread Safety Note
+///
+/// This function temporarily redirects the process-wide stderr file descriptor (fd 2)
+/// to /dev/null. This is a global operation that affects all threads. Any concurrent
+/// stderr writes from other threads or libraries will be silently dropped during the
+/// brief window when ALSA initialization occurs.
+///
+/// This trade-off is acceptable because:
+/// - The redirection window is very short (only during `OutputStream::try_default()`)
+/// - This function is called once at startup from a dedicated audio thread
+/// - ALSA error messages are noisy and unhelpful on headless systems
+/// - The alternative (letting ALSA spam stderr) degrades user experience significantly
+///
+/// If stricter isolation is needed, consider calling `init()` before spawning other
+/// threads that may write to stderr.
 #[cfg(all(feature = "audio", target_os = "linux"))]
 fn try_create_output_stream() -> Option<(rodio::OutputStream, rodio::OutputStreamHandle)> {
     use std::os::unix::io::AsRawFd;
@@ -110,8 +126,21 @@ fn try_create_output_stream() -> Option<(rodio::OutputStream, rodio::OutputStrea
     // Restore the original stderr
     // SAFETY: dup2 and close are safe with valid file descriptors
     unsafe {
-        libc::dup2(original_stderr, 2);
-        libc::close(original_stderr);
+        let restore_result = libc::dup2(original_stderr, 2);
+        if restore_result == -1 {
+            // dup2 failed to restore stderr - this is a critical issue as stderr
+            // will remain redirected to /dev/null for the rest of the process.
+            // Log the error (which ironically may not be visible if stderr is broken).
+            // Keep original_stderr open in case we can retry later or for debugging.
+            tracing::error!(
+                "Failed to restore stderr after ALSA initialization (dup2 returned -1). \
+                 Stderr may remain redirected to /dev/null."
+            );
+        } else {
+            // Only close original_stderr if dup2 succeeded, as we may still need
+            // it for retry attempts if restoration failed.
+            libc::close(original_stderr);
+        }
     }
 
     match result {
