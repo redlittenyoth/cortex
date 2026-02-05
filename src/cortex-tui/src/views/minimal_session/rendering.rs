@@ -15,8 +15,8 @@ use cortex_core::widgets::{Brain, Message, MessageRole};
 use cortex_tui_components::welcome_card::{InfoCard, InfoCardPair, ToLines, WelcomeCard};
 
 use crate::app::{
-    AppState, ApprovalState, InlineApprovalSelection, RiskLevelSelection,
-    SubagentDisplayStatus, SubagentTaskDisplay,
+    AppState, ApprovalState, InlineApprovalSelection, RiskLevelSelection, SubagentDisplayStatus,
+    SubagentTaskDisplay,
 };
 use crate::ui::colors::AdaptiveColors;
 use crate::ui::consts::border;
@@ -997,7 +997,12 @@ pub fn render_motd_compact(
 /// │ [1] Low  [2] Medium  [3] High  [Esc] Cancel             │
 /// ╰─────────────────────────────────────────────────────────╯
 /// ```
-pub fn render_inline_approval(area: Rect, buf: &mut Buffer, approval: &ApprovalState, colors: &AdaptiveColors) {
+pub fn render_inline_approval(
+    area: Rect,
+    buf: &mut Buffer,
+    approval: &ApprovalState,
+    colors: &AdaptiveColors,
+) {
     if area.is_empty() || area.height < 4 {
         return;
     }
@@ -1057,42 +1062,72 @@ pub fn render_inline_approval(area: Rect, buf: &mut Buffer, approval: &ApprovalS
     if approval.show_risk_submenu {
         // Risk level submenu content
         let y = area.y + 1;
-        
+
         // Build risk level options
         let mut spans: Vec<Span<'static>> = Vec::new();
-        
+
         let low_selected = approval.selected_risk_level == RiskLevelSelection::Low;
         let med_selected = approval.selected_risk_level == RiskLevelSelection::Medium;
         let high_selected = approval.selected_risk_level == RiskLevelSelection::High;
-        
+
         // [1] Low
-        spans.push(Span::styled("[1]", if low_selected { accent_style } else { dim_style }));
-        spans.push(Span::styled(" Low  ", if low_selected { 
-            Style::default().fg(colors.success) 
-        } else { 
-            dim_style 
-        }));
-        
+        spans.push(Span::styled(
+            "[1]",
+            if low_selected {
+                accent_style
+            } else {
+                dim_style
+            },
+        ));
+        spans.push(Span::styled(
+            " Low  ",
+            if low_selected {
+                Style::default().fg(colors.success)
+            } else {
+                dim_style
+            },
+        ));
+
         // [2] Medium
-        spans.push(Span::styled("[2]", if med_selected { accent_style } else { dim_style }));
-        spans.push(Span::styled(" Medium  ", if med_selected { 
-            Style::default().fg(colors.warning) 
-        } else { 
-            dim_style 
-        }));
-        
+        spans.push(Span::styled(
+            "[2]",
+            if med_selected {
+                accent_style
+            } else {
+                dim_style
+            },
+        ));
+        spans.push(Span::styled(
+            " Medium  ",
+            if med_selected {
+                Style::default().fg(colors.warning)
+            } else {
+                dim_style
+            },
+        ));
+
         // [3] High
-        spans.push(Span::styled("[3]", if high_selected { accent_style } else { dim_style }));
-        spans.push(Span::styled(" High  ", if high_selected { 
-            Style::default().fg(colors.error) 
-        } else { 
-            dim_style 
-        }));
-        
+        spans.push(Span::styled(
+            "[3]",
+            if high_selected {
+                accent_style
+            } else {
+                dim_style
+            },
+        ));
+        spans.push(Span::styled(
+            " High  ",
+            if high_selected {
+                Style::default().fg(colors.error)
+            } else {
+                dim_style
+            },
+        ));
+
         // [Esc] Cancel
         spans.push(Span::styled("[Esc]", dim_style));
         spans.push(Span::styled(" Cancel", dim_style));
-        
+
         let line = Line::from(spans);
         Paragraph::new(line).render(
             Rect::new(content_x, y, area.width.saturating_sub(4), 1),
@@ -1104,12 +1139,19 @@ pub fn render_inline_approval(area: Rect, buf: &mut Buffer, approval: &ApprovalS
         let y1 = area.y + 1;
         let warning_char = "⚠";
         let tool_display = format!(" Execute: {}", approval.tool_name);
-        buf.set_string(content_x, y1, warning_char, Style::default().fg(colors.warning));
+        buf.set_string(
+            content_x,
+            y1,
+            warning_char,
+            Style::default().fg(colors.warning),
+        );
         buf.set_string(
             content_x + 2,
             y1,
             &tool_display,
-            Style::default().fg(colors.text).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(colors.text)
+                .add_modifier(Modifier::BOLD),
         );
 
         // Line 2: args summary (truncated)
@@ -1124,37 +1166,67 @@ pub fn render_inline_approval(area: Rect, buf: &mut Buffer, approval: &ApprovalS
 
         // Line 3: Action buttons
         let y3 = area.y + 3;
-        
+
         let mut spans: Vec<Span<'static>> = Vec::new();
-        
+
         let reject_selected = approval.selected_action == InlineApprovalSelection::Reject;
         let accept_selected = approval.selected_action == InlineApprovalSelection::AcceptOnce;
         let set_selected = approval.selected_action == InlineApprovalSelection::AcceptAndSet;
-        
+
         // [n] Reject
-        spans.push(Span::styled("[n]", if reject_selected { accent_style } else { dim_style }));
-        spans.push(Span::styled(" Reject  ", if reject_selected { 
-            Style::default().fg(colors.error) 
-        } else { 
-            dim_style 
-        }));
-        
+        spans.push(Span::styled(
+            "[n]",
+            if reject_selected {
+                accent_style
+            } else {
+                dim_style
+            },
+        ));
+        spans.push(Span::styled(
+            " Reject  ",
+            if reject_selected {
+                Style::default().fg(colors.error)
+            } else {
+                dim_style
+            },
+        ));
+
         // [y] Accept Once
-        spans.push(Span::styled("[y]", if accept_selected { accent_style } else { dim_style }));
-        spans.push(Span::styled(" Accept Once  ", if accept_selected { 
-            Style::default().fg(colors.success) 
-        } else { 
-            dim_style 
-        }));
-        
+        spans.push(Span::styled(
+            "[y]",
+            if accept_selected {
+                accent_style
+            } else {
+                dim_style
+            },
+        ));
+        spans.push(Span::styled(
+            " Accept Once  ",
+            if accept_selected {
+                Style::default().fg(colors.success)
+            } else {
+                dim_style
+            },
+        ));
+
         // [a] Accept & Set Risk
-        spans.push(Span::styled("[a]", if set_selected { accent_style } else { dim_style }));
-        spans.push(Span::styled(" Accept & Set Risk", if set_selected { 
-            Style::default().fg(colors.warning) 
-        } else { 
-            dim_style 
-        }));
-        
+        spans.push(Span::styled(
+            "[a]",
+            if set_selected {
+                accent_style
+            } else {
+                dim_style
+            },
+        ));
+        spans.push(Span::styled(
+            " Accept & Set Risk",
+            if set_selected {
+                Style::default().fg(colors.warning)
+            } else {
+                dim_style
+            },
+        ));
+
         let line = Line::from(spans);
         Paragraph::new(line).render(
             Rect::new(content_x, y3, area.width.saturating_sub(4), 1),
@@ -1167,7 +1239,8 @@ pub fn render_inline_approval(area: Rect, buf: &mut Buffer, approval: &ApprovalS
 fn format_args_summary(args: &serde_json::Value, max_width: usize) -> String {
     match args {
         serde_json::Value::Object(map) => {
-            let parts: Vec<String> = map.iter()
+            let parts: Vec<String> = map
+                .iter()
                 .take(3) // Only show first 3 args
                 .map(|(k, v)| {
                     let v_str = match v {

@@ -516,11 +516,13 @@ impl EventLoop {
         key_event: crossterm::event::KeyEvent,
         terminal: &mut CortexTerminal,
     ) -> Result<bool> {
-        use crossterm::event::KeyCode;
         use crate::app::{InlineApprovalSelection, RiskLevelSelection};
+        use crossterm::event::KeyCode;
 
         // Check if risk level submenu is visible
-        let show_submenu = self.app_state.pending_approval
+        let show_submenu = self
+            .app_state
+            .pending_approval
             .as_ref()
             .map(|a| a.show_risk_submenu)
             .unwrap_or(false);
@@ -530,19 +532,22 @@ impl EventLoop {
             match key_event.code {
                 KeyCode::Char('1') => {
                     // Select Low risk level and approve
-                    self.handle_approve_with_risk_level(RiskLevelSelection::Low).await?;
+                    self.handle_approve_with_risk_level(RiskLevelSelection::Low)
+                        .await?;
                     self.render(terminal)?;
                     return Ok(true);
                 }
                 KeyCode::Char('2') => {
                     // Select Medium risk level and approve
-                    self.handle_approve_with_risk_level(RiskLevelSelection::Medium).await?;
+                    self.handle_approve_with_risk_level(RiskLevelSelection::Medium)
+                        .await?;
                     self.render(terminal)?;
                     return Ok(true);
                 }
                 KeyCode::Char('3') => {
                     // Select High risk level and approve
-                    self.handle_approve_with_risk_level(RiskLevelSelection::High).await?;
+                    self.handle_approve_with_risk_level(RiskLevelSelection::High)
+                        .await?;
                     self.render(terminal)?;
                     return Ok(true);
                 }
@@ -572,7 +577,9 @@ impl EventLoop {
                 }
                 KeyCode::Enter => {
                     // Confirm selected risk level
-                    let risk_level = self.app_state.pending_approval
+                    let risk_level = self
+                        .app_state
+                        .pending_approval
                         .as_ref()
                         .map(|a| a.selected_risk_level)
                         .unwrap_or_default();
@@ -628,7 +635,9 @@ impl EventLoop {
             }
             KeyCode::Enter => {
                 // Confirm selected action
-                let action = self.app_state.pending_approval
+                let action = self
+                    .app_state
+                    .pending_approval
                     .as_ref()
                     .map(|a| a.selected_action)
                     .unwrap_or_default();
@@ -678,7 +687,9 @@ impl EventLoop {
 
         // Show toast notification about the mode change
         let mode_name = self.app_state.permission_mode.display_name();
-        self.app_state.toasts.info(&format!("Risk level set to: {}", mode_name));
+        self.app_state
+            .toasts
+            .info(&format!("Risk level set to: {}", mode_name));
 
         // Now approve the tool
         self.handle_approve().await?;
