@@ -31,8 +31,6 @@ pub enum UpdateStatus {
     /// No update check performed yet
     #[default]
     NotChecked,
-    /// Currently checking for updates
-    Checking,
     /// An update is available
     Available {
         /// The new version available
@@ -50,13 +48,6 @@ pub enum UpdateStatus {
         /// The version that was downloaded
         version: String,
     },
-    /// Update check failed (network error, etc.)
-    CheckFailed {
-        /// Error message
-        error: String,
-    },
-    /// Already on the latest version
-    UpToDate,
 }
 
 impl UpdateStatus {
