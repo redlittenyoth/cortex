@@ -303,9 +303,11 @@ impl EventLoop {
                     .info("Timeline: Use scroll to navigate messages");
             }
             ModalType::ThemePicker => {
-                let current = self.app_state.settings.get("theme").map(|s| s.as_str());
-                let interactive = crate::interactive::builders::build_theme_selector(current);
-                self.app_state.enter_interactive_mode(interactive);
+                use crate::modal::ThemeSelectorModal;
+                // Use the effective theme (preview or active) for the modal
+                let current_theme = self.app_state.get_effective_theme_name().to_string();
+                self.modal_stack
+                    .push(Box::new(ThemeSelectorModal::new(&current_theme)));
             }
             ModalType::Fork => {
                 if let Some(ref session) = self.cortex_session {

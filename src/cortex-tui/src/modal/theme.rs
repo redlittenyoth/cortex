@@ -1,12 +1,14 @@
 //! Theme Selector Modal
 //!
 //! A modal for selecting the application theme (dark, light, ocean_dark, monokai).
+//! Supports live preview: as the user navigates up/down, the entire TUI updates
+//! to show the selected theme's colors before confirming with Enter.
 
-use cortex_core::style::{CYAN_PRIMARY, SURFACE_0, TEXT, TEXT_DIM, VOID};
+use cortex_core::style::{CYAN_PRIMARY, SURFACE_0, TEXT, TEXT_DIM, ThemeColors, VOID};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::style::Style;
+use ratatui::style::{Color, Style};
 use ratatui::widgets::Widget;
 
 use crate::widgets::ActionBar;
@@ -52,11 +54,18 @@ const THEMES: &[ThemeDef] = &[
 // THEME SELECTOR MODAL
 // ============================================================================
 
-/// A modal for selecting the application theme.
+/// A modal for selecting the application theme with live preview support.
+///
+/// When the user navigates through themes, the modal emits preview actions
+/// that update the TUI colors in real-time. On confirm (Enter), the theme
+/// is persisted. On cancel (Esc), the original theme is restored.
 pub struct ThemeSelectorModal {
     /// Index of the currently selected theme in the list.
     selected_index: usize,
-    /// Current theme name for highlighting.
+    /// Original theme name stored for reference (restored via RevertTheme action).
+    #[allow(dead_code)]
+    original_theme: String,
+    /// Current theme name for highlighting (tracks the active/confirmed theme).
     current_theme: String,
 }
 
@@ -64,6 +73,7 @@ impl ThemeSelectorModal {
     /// Create a new ThemeSelectorModal.
     ///
     /// The modal pre-selects the current theme so users can see which theme is active.
+    /// The original theme is stored for potential revert on cancel.
     pub fn new(current_theme: &str) -> Self {
         // Find the current theme's index to pre-select it
         let selected_index = THEMES
@@ -73,6 +83,7 @@ impl ThemeSelectorModal {
 
         Self {
             selected_index,
+            original_theme: current_theme.to_string(),
             current_theme: current_theme.to_string(),
         }
     }
@@ -87,21 +98,33 @@ impl ThemeSelectorModal {
         ActionBar::new().with_standard_hints()
     }
 
-    /// Navigate up in the list.
-    fn navigate_up(&mut self) {
+    /// Navigate up in the list and return the new theme for preview.
+    fn navigate_up(&mut self) -> Option<&'static str> {
         if self.selected_index > 0 {
             self.selected_index -= 1;
+            self.selected_theme_id()
+        } else {
+            None
         }
     }
 
-    /// Navigate down in the list.
-    fn navigate_down(&mut self) {
+    /// Navigate down in the list and return the new theme for preview.
+    fn navigate_down(&mut self) -> Option<&'static str> {
         if self.selected_index < THEMES.len().saturating_sub(1) {
             self.selected_index += 1;
+            self.selected_theme_id()
+        } else {
+            None
         }
     }
 
-    /// Render a theme row.
+    /// Get color swatch for a theme (shows primary color sample).
+    fn get_theme_swatch_color(theme_id: &str) -> Color {
+        let colors = ThemeColors::from_name(theme_id);
+        colors.primary
+    }
+
+    /// Render a theme row with color swatch.
     fn render_theme_row(
         &self,
         x: u16,
@@ -133,6 +156,11 @@ impl ThemeSelectorModal {
         // Current marker
         let marker = if is_current { "●" } else { " " };
         buf.set_string(col, y, marker, Style::default().fg(marker_fg).bg(bg));
+        col += 2;
+
+        // Color swatch (shows theme's primary color)
+        let swatch_color = Self::get_theme_swatch_color(theme.id);
+        buf.set_string(col, y, "■", Style::default().fg(swatch_color).bg(bg));
         col += 2;
 
         // Theme label
@@ -215,21 +243,33 @@ impl Modal for ThemeSelectorModal {
 
     fn handle_key(&mut self, key: KeyEvent) -> ModalResult {
         match key.code {
-            KeyCode::Esc => ModalResult::Close,
+            KeyCode::Esc => {
+                // Revert to original theme on cancel
+                ModalResult::Action(ModalAction::RevertTheme)
+            }
             KeyCode::Enter => {
+                // Confirm the currently selected theme
                 if let Some(theme_id) = self.selected_theme_id() {
-                    ModalResult::Action(ModalAction::Custom(format!("theme:{}", theme_id)))
+                    ModalResult::Action(ModalAction::ConfirmTheme(theme_id.to_string()))
                 } else {
-                    ModalResult::Close
+                    ModalResult::Action(ModalAction::RevertTheme)
                 }
             }
             KeyCode::Up | KeyCode::Char('k') => {
-                self.navigate_up();
-                ModalResult::Continue
+                // Navigate up and trigger live preview
+                if let Some(theme_id) = self.navigate_up() {
+                    ModalResult::ActionContinue(ModalAction::PreviewTheme(theme_id.to_string()))
+                } else {
+                    ModalResult::Continue
+                }
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                self.navigate_down();
-                ModalResult::Continue
+                // Navigate down and trigger live preview
+                if let Some(theme_id) = self.navigate_down() {
+                    ModalResult::ActionContinue(ModalAction::PreviewTheme(theme_id.to_string()))
+                } else {
+                    ModalResult::Continue
+                }
             }
             _ => ModalResult::Continue,
         }
@@ -258,6 +298,7 @@ mod tests {
         let modal = ThemeSelectorModal::new("dark");
         assert_eq!(modal.title(), "Select Theme");
         assert_eq!(modal.current_theme, "dark");
+        assert_eq!(modal.original_theme, "dark");
     }
 
     #[test]
@@ -290,85 +331,118 @@ mod tests {
     }
 
     #[test]
-    fn test_enter_returns_action() {
+    fn test_enter_returns_confirm_action() {
         let mut modal = ThemeSelectorModal::new("dark");
         let key = KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE);
         let result = modal.handle_key(key);
 
-        if let ModalResult::Action(ModalAction::Custom(action)) = result {
-            assert_eq!(action, "theme:dark");
+        if let ModalResult::Action(ModalAction::ConfirmTheme(theme)) = result {
+            assert_eq!(theme, "dark");
         } else {
-            panic!("Expected Custom action");
+            panic!("Expected ConfirmTheme action");
         }
     }
 
     #[test]
-    fn test_escape_closes() {
+    fn test_escape_reverts_theme() {
         let mut modal = ThemeSelectorModal::new("dark");
         let key = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
         let result = modal.handle_key(key);
-        assert!(matches!(result, ModalResult::Close));
+        assert!(matches!(
+            result,
+            ModalResult::Action(ModalAction::RevertTheme)
+        ));
     }
 
     #[test]
-    fn test_navigate_down() {
+    fn test_navigate_down_triggers_preview() {
         let mut modal = ThemeSelectorModal::new("dark");
         assert_eq!(modal.selected_index, 0);
 
         let down = KeyEvent::new(KeyCode::Down, KeyModifiers::NONE);
-        modal.handle_key(down);
+        let result = modal.handle_key(down);
+
         assert_eq!(modal.selected_index, 1);
         assert_eq!(modal.selected_theme_id(), Some("light"));
+
+        // Should return ActionContinue with preview
+        if let ModalResult::ActionContinue(ModalAction::PreviewTheme(theme)) = result {
+            assert_eq!(theme, "light");
+        } else {
+            panic!("Expected ActionContinue with PreviewTheme");
+        }
     }
 
     #[test]
-    fn test_navigate_up() {
+    fn test_navigate_up_triggers_preview() {
         let mut modal = ThemeSelectorModal::new("light");
         assert_eq!(modal.selected_index, 1);
 
         let up = KeyEvent::new(KeyCode::Up, KeyModifiers::NONE);
-        modal.handle_key(up);
+        let result = modal.handle_key(up);
+
         assert_eq!(modal.selected_index, 0);
         assert_eq!(modal.selected_theme_id(), Some("dark"));
+
+        // Should return ActionContinue with preview
+        if let ModalResult::ActionContinue(ModalAction::PreviewTheme(theme)) = result {
+            assert_eq!(theme, "dark");
+        } else {
+            panic!("Expected ActionContinue with PreviewTheme");
+        }
     }
 
     #[test]
-    fn test_navigate_up_at_top() {
+    fn test_navigate_up_at_top_no_preview() {
         let mut modal = ThemeSelectorModal::new("dark");
         assert_eq!(modal.selected_index, 0);
 
         let up = KeyEvent::new(KeyCode::Up, KeyModifiers::NONE);
-        modal.handle_key(up);
+        let result = modal.handle_key(up);
+
         assert_eq!(modal.selected_index, 0); // Should stay at 0
+        // No preview action since we didn't move
+        assert!(matches!(result, ModalResult::Continue));
     }
 
     #[test]
-    fn test_navigate_down_at_bottom() {
+    fn test_navigate_down_at_bottom_no_preview() {
         let mut modal = ThemeSelectorModal::new("monokai");
         assert_eq!(modal.selected_index, 3);
 
         let down = KeyEvent::new(KeyCode::Down, KeyModifiers::NONE);
-        modal.handle_key(down);
+        let result = modal.handle_key(down);
+
         assert_eq!(modal.selected_index, 3); // Should stay at 3
+        // No preview action since we didn't move
+        assert!(matches!(result, ModalResult::Continue));
     }
 
     #[test]
-    fn test_vim_navigation() {
+    fn test_vim_navigation_with_preview() {
         let mut modal = ThemeSelectorModal::new("dark");
 
-        // j moves down
+        // j moves down and triggers preview
         let j = KeyEvent::new(KeyCode::Char('j'), KeyModifiers::NONE);
-        modal.handle_key(j);
+        let result = modal.handle_key(j);
         assert_eq!(modal.selected_index, 1);
+        assert!(matches!(
+            result,
+            ModalResult::ActionContinue(ModalAction::PreviewTheme(_))
+        ));
 
-        // k moves up
+        // k moves up and triggers preview
         let k = KeyEvent::new(KeyCode::Char('k'), KeyModifiers::NONE);
-        modal.handle_key(k);
+        let result = modal.handle_key(k);
         assert_eq!(modal.selected_index, 0);
+        assert!(matches!(
+            result,
+            ModalResult::ActionContinue(ModalAction::PreviewTheme(_))
+        ));
     }
 
     #[test]
-    fn test_select_different_theme() {
+    fn test_select_different_theme_with_confirm() {
         let mut modal = ThemeSelectorModal::new("dark");
 
         // Navigate to ocean_dark (index 2)
@@ -377,15 +451,22 @@ mod tests {
         modal.handle_key(down);
         assert_eq!(modal.selected_theme_id(), Some("ocean_dark"));
 
-        // Select it
+        // Confirm it
         let enter = KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE);
         let result = modal.handle_key(enter);
 
-        if let ModalResult::Action(ModalAction::Custom(action)) = result {
-            assert_eq!(action, "theme:ocean_dark");
+        if let ModalResult::Action(ModalAction::ConfirmTheme(theme)) = result {
+            assert_eq!(theme, "ocean_dark");
         } else {
-            panic!("Expected Custom action with ocean_dark theme");
+            panic!("Expected ConfirmTheme action with ocean_dark theme");
         }
+    }
+
+    #[test]
+    fn test_original_theme_stored() {
+        let modal = ThemeSelectorModal::new("monokai");
+        assert_eq!(modal.original_theme, "monokai");
+        assert_eq!(modal.current_theme, "monokai");
     }
 
     #[test]
@@ -403,5 +484,18 @@ mod tests {
         let height = modal.desired_height(20, 80);
         assert!(height >= 6);
         assert!(height <= 12);
+    }
+
+    #[test]
+    fn test_theme_swatch_colors() {
+        // Verify we can get swatch colors for each theme
+        for theme in THEMES {
+            let color = ThemeSelectorModal::get_theme_swatch_color(theme.id);
+            // Just verify it doesn't panic and returns a valid color
+            match color {
+                Color::Rgb(_, _, _) => {}
+                _ => panic!("Expected RGB color for theme {}", theme.id),
+            }
+        }
     }
 }

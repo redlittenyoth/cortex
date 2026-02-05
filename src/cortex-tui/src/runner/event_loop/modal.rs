@@ -342,8 +342,27 @@ impl EventLoop {
                 self.app_state.new_session();
                 self.add_system_message("New session started");
             }
+            ModalAction::PreviewTheme(theme_name) => {
+                // Live preview: update colors temporarily without persisting
+                self.app_state.start_theme_preview(&theme_name);
+            }
+            ModalAction::RevertTheme => {
+                // Cancel preview and revert to the original theme
+                self.app_state.cancel_theme_preview();
+            }
+            ModalAction::ConfirmTheme(theme_name) => {
+                // Confirm and persist the theme selection
+                self.app_state.set_theme(&theme_name);
+                // Persist theme preference to config
+                if let Ok(mut config) = crate::providers::config::CortexConfig::load() {
+                    let _ = config.save_last_theme(&theme_name);
+                }
+                self.app_state
+                    .toasts
+                    .success(format!("Theme changed to: {}", theme_name));
+            }
             ModalAction::Custom(data) => {
-                // Handle theme selection from ThemeSelectorModal
+                // Handle legacy theme selection from interactive builder
                 if let Some(theme_name) = data.strip_prefix("theme:") {
                     self.app_state.set_theme(theme_name);
                     // Persist theme preference to config

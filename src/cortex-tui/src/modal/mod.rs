@@ -97,6 +97,8 @@ pub enum ModalResult {
     Close,
     /// Perform an action and close
     Action(ModalAction),
+    /// Perform an action but keep the modal open (for live preview)
+    ActionContinue(ModalAction),
     /// Push a new modal on top of this one
     Push(Box<dyn Modal>),
     /// Replace this modal with another
@@ -171,6 +173,14 @@ pub enum ModalAction {
         provider: String,
         api_key: String,
     },
+
+    // Theme Preview Actions
+    /// Preview a theme without applying it permanently
+    PreviewTheme(String),
+    /// Revert to the original theme (cancel preview)
+    RevertTheme,
+    /// Confirm and apply the previewed theme
+    ConfirmTheme(String),
 
     // Generic/Custom
     Custom(String),
@@ -252,6 +262,10 @@ impl ModalStack {
                     // Close the modal after an action is returned
                     self.pop();
                     ModalResult::Action(action)
+                }
+                ModalResult::ActionContinue(action) => {
+                    // Return the action but keep the modal open (for live preview)
+                    ModalResult::ActionContinue(action)
                 }
                 other => other,
             }
