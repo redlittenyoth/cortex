@@ -9,6 +9,9 @@
 //!
 //! On platforms without audio support (e.g., musl builds), falls back to
 //! terminal bell notifications.
+//!
+//! On Linux, ALSA error messages (e.g., "cannot find card 0") are suppressed
+//! during audio initialization to avoid noisy output on headless systems.
 
 #[cfg(feature = "audio")]
 use std::io::Cursor;
@@ -44,6 +47,125 @@ const COMPLETE_WAV: &[u8] = include_bytes!("sounds/complete.wav");
 #[cfg(feature = "audio")]
 const APPROVAL_WAV: &[u8] = include_bytes!("sounds/approval.wav");
 
+/// Try to create audio output stream, suppressing ALSA errors on Linux.
+///
+/// On Linux, ALSA prints error messages directly to stderr when no audio
+/// hardware is available (e.g., "ALSA lib confmisc.c: cannot find card 0").
+/// This function suppresses those messages by temporarily redirecting stderr
+/// to /dev/null during initialization.
+///
+/// # Thread Safety Note
+///
+/// This function temporarily redirects the process-wide stderr file descriptor (fd 2)
+/// to /dev/null. This is a global operation that affects all threads. Any concurrent
+/// stderr writes from other threads or libraries will be silently dropped during the
+/// brief window when ALSA initialization occurs.
+///
+/// This trade-off is acceptable because:
+/// - The redirection window is very short (only during `OutputStream::try_default()`)
+/// - This function is called once at startup from a dedicated audio thread
+/// - ALSA error messages are noisy and unhelpful on headless systems
+/// - The alternative (letting ALSA spam stderr) degrades user experience significantly
+///
+/// If stricter isolation is needed, consider calling `init()` before spawning other
+/// threads that may write to stderr.
+#[cfg(all(feature = "audio", target_os = "linux"))]
+fn try_create_output_stream() -> Option<(rodio::OutputStream, rodio::OutputStreamHandle)> {
+    use std::os::unix::io::AsRawFd;
+
+    // Open /dev/null for redirecting stderr
+    let dev_null = match std::fs::File::open("/dev/null") {
+        Ok(f) => f,
+        Err(_) => {
+            // Can't open /dev/null, try without suppression
+            return match rodio::OutputStream::try_default() {
+                Ok((stream, handle)) => Some((stream, handle)),
+                Err(e) => {
+                    tracing::debug!("Failed to initialize audio output: {}", e);
+                    None
+                }
+            };
+        }
+    };
+
+    // Save the original stderr file descriptor
+    // SAFETY: dup is safe to call with a valid file descriptor (2 = stderr)
+    let original_stderr = unsafe { libc::dup(2) };
+    if original_stderr == -1 {
+        // dup failed, try without suppression
+        return match rodio::OutputStream::try_default() {
+            Ok((stream, handle)) => Some((stream, handle)),
+            Err(e) => {
+                tracing::debug!("Failed to initialize audio output: {}", e);
+                None
+            }
+        };
+    }
+
+    // Redirect stderr to /dev/null
+    // SAFETY: dup2 is safe with valid file descriptors
+    let redirect_result = unsafe { libc::dup2(dev_null.as_raw_fd(), 2) };
+    drop(dev_null); // Close our handle to /dev/null
+
+    if redirect_result == -1 {
+        // dup2 failed, restore and try without suppression
+        // SAFETY: close is safe with a valid file descriptor
+        unsafe { libc::close(original_stderr) };
+        return match rodio::OutputStream::try_default() {
+            Ok((stream, handle)) => Some((stream, handle)),
+            Err(e) => {
+                tracing::debug!("Failed to initialize audio output: {}", e);
+                None
+            }
+        };
+    }
+
+    // Try to create the audio output stream (ALSA errors will go to /dev/null)
+    let result = rodio::OutputStream::try_default();
+
+    // Restore the original stderr
+    // SAFETY: dup2 and close are safe with valid file descriptors
+    unsafe {
+        let restore_result = libc::dup2(original_stderr, 2);
+        if restore_result == -1 {
+            // dup2 failed to restore stderr - this is a critical issue as stderr
+            // will remain redirected to /dev/null for the rest of the process.
+            // Log the error (which ironically may not be visible if stderr is broken).
+            // Keep original_stderr open in case we can retry later or for debugging.
+            tracing::error!(
+                "Failed to restore stderr after ALSA initialization (dup2 returned -1). \
+                 Stderr may remain redirected to /dev/null."
+            );
+        } else {
+            // Only close original_stderr if dup2 succeeded, as we may still need
+            // it for retry attempts if restoration failed.
+            libc::close(original_stderr);
+        }
+    }
+
+    match result {
+        Ok((stream, handle)) => Some((stream, handle)),
+        Err(e) => {
+            tracing::debug!("Failed to initialize audio output: {}", e);
+            None
+        }
+    }
+}
+
+/// Try to create audio output stream (non-Linux platforms).
+///
+/// On non-Linux platforms, ALSA is not used, so no stderr suppression is needed.
+#[cfg(all(feature = "audio", not(target_os = "linux")))]
+fn try_create_output_stream() -> Option<(rodio::OutputStream, rodio::OutputStreamHandle)> {
+    match rodio::OutputStream::try_default() {
+        Ok((stream, handle)) => Some((stream, handle)),
+        Err(e) => {
+            tracing::debug!("Failed to initialize audio output: {}", e);
+            None
+        }
+    }
+}
+
 /// Initialize the global sound system.
 /// Spawns a dedicated audio thread that owns the OutputStream.
 /// Should be called once at application startup.
@@ -67,14 +189,8 @@ pub fn init() {
     thread::Builder::new()
         .name("cortex-audio".to_string())
         .spawn(move || {
-            // Try to create audio output
-            let output = match rodio::OutputStream::try_default() {
-                Ok((stream, handle)) => Some((stream, handle)),
-                Err(e) => {
-                    tracing::debug!("Failed to initialize audio output: {}", e);
-                    None
-                }
-            };
+            // Try to create audio output (with ALSA error suppression on Linux)
+            let output = try_create_output_stream();
 
             // Process sound requests
             while let Ok(sound_type) = rx.recv() {
