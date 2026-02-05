@@ -632,6 +632,43 @@ impl AppState {
 }
 
 // ============================================================================
+// APPSTATE METHODS - Theme Preview
+// ============================================================================
+
+impl AppState {
+    /// Start previewing a theme.
+    ///
+    /// This updates the cached theme colors to show the preview theme,
+    /// without changing the active theme.
+    pub fn start_theme_preview(&mut self, theme_name: &str) {
+        self.set_preview_theme(Some(theme_name.to_string()));
+    }
+
+    /// Cancel theme preview and revert to the original (active) theme.
+    ///
+    /// Restores the cached colors to the active theme.
+    pub fn cancel_theme_preview(&mut self) {
+        self.set_preview_theme(None);
+    }
+
+    /// Confirm the previewed theme as the active theme.
+    ///
+    /// Makes the preview theme the new active theme and clears the preview state.
+    pub fn confirm_theme_preview(&mut self) {
+        if let Some(preview) = self.preview_theme.take() {
+            self.active_theme = preview.clone();
+            // Colors are already set to the preview theme, just need to clear preview state
+            self.preview_theme = None;
+        }
+    }
+
+    /// Check if a theme preview is active.
+    pub fn has_theme_preview(&self) -> bool {
+        self.preview_theme.is_some()
+    }
+}
+
+// ============================================================================
 // APPSTATE METHODS - Operation Mode
 // ============================================================================
 

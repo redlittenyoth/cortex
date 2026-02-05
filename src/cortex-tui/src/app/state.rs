@@ -106,6 +106,8 @@ pub struct AppState {
     pub input_mode: crate::interactive::InputMode,
     /// Active theme name
     pub active_theme: String,
+    /// Preview theme name (for live theme preview in selector)
+    pub preview_theme: Option<String>,
     /// Cached theme colors for quick access
     pub theme_colors: ThemeColors,
     /// Cached markdown theme for quick access
@@ -238,6 +240,7 @@ impl AppState {
             diff_scroll: 0,
             input_mode: crate::interactive::InputMode::Normal,
             active_theme: "dark".to_string(),
+            preview_theme: None,
             theme_colors: ThemeColors::dark(),
             markdown_theme: MarkdownTheme::default(),
             compact_mode: false,
@@ -372,8 +375,30 @@ impl AppState {
     /// Change the active theme
     pub fn set_theme(&mut self, name: &str) {
         self.active_theme = name.to_string();
+        self.preview_theme = None; // Clear any preview when setting the theme
         self.theme_colors = ThemeColors::from_name(name);
         self.markdown_theme = MarkdownTheme::from_name(name);
+    }
+
+    /// Set a preview theme for live preview functionality
+    ///
+    /// Updates the cached theme_colors to the preview theme colors.
+    pub fn set_preview_theme(&mut self, theme: Option<String>) {
+        self.preview_theme = theme.clone();
+        // Update cached colors based on preview or active theme
+        let effective_theme = theme.as_deref().unwrap_or(&self.active_theme);
+        self.theme_colors = ThemeColors::from_name(effective_theme);
+        self.markdown_theme = MarkdownTheme::from_name(effective_theme);
+    }
+
+    /// Get the effective theme colors (preview if set, otherwise active)
+    pub fn get_effective_theme_colors(&self) -> &ThemeColors {
+        &self.theme_colors
+    }
+
+    /// Get the name of the effective theme (preview if set, otherwise active)
+    pub fn get_effective_theme_name(&self) -> &str {
+        self.preview_theme.as_deref().unwrap_or(&self.active_theme)
     }
 
     /// Get AdaptiveColors from the current theme

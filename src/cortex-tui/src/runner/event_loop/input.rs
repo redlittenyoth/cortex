@@ -146,8 +146,16 @@ impl EventLoop {
         // Check modal stack first (new unified modal system)
         if self.modal_stack.is_active() {
             let result = self.modal_stack.handle_key(key_event);
-            if let ModalResult::Action(action) = result {
-                self.process_modal_action(action).await;
+            match result {
+                ModalResult::Action(action) => {
+                    // Action closes the modal
+                    self.process_modal_action(action).await;
+                }
+                ModalResult::ActionContinue(action) => {
+                    // Action keeps the modal open (for live preview)
+                    self.process_modal_action(action).await;
+                }
+                _ => {}
             }
             self.render(terminal)?;
             return Ok(());
